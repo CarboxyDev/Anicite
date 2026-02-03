@@ -17,10 +17,18 @@
     "resolveJsonModule": true,
     "jsx": "react",
     "paths": {
-      "@/*": ["src/*"],
-      "@test/*": ["test/*"]
+      "@/*": ["src/*"]
     }
   },
-  "include": ["src/**/*", "test/**/*", "emails/**/*"],
-  "exclude": ["node_modules", "dist", "src/generated"]
+  "include": ["src/**/*", "emails/**/*"],
+  "exclude": [
+    "node_modules",
+    "dist",
+    "src/generated",
+    "**/__tests__/**",
+    "**/*.test.ts",
+    "**/*.test.tsx",
+    "**/*.spec.ts",
+    "**/*.spec.tsx"
+  ]
 }

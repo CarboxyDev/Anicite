@@ -1,3 +1,4 @@
+import type { ContentScriptDefinition } from 'wxt';
 import { defineContentScript } from 'wxt/sandbox';
 
 import { SETTINGS_KEY } from '../lib/constants';
@@ -8,7 +9,7 @@ import { getUrlParts } from '../lib/url';
 
 const FLUSH_INTERVAL_MS = 30000;
 
-export default defineContentScript({
+const contentScript: ContentScriptDefinition = defineContentScript({
   matches: ['<all_urls>'],
   runAt: 'document_idle',
   async main() {
@@ -151,3 +152,5 @@ export default defineContentScript({
     });
   },
 });
+
+export default contentScript;

@@ -1,10 +1,11 @@
+import type { BackgroundDefinition } from 'wxt';
 import { defineBackground } from 'wxt/sandbox';
 
 import { SETTINGS_KEY } from '../lib/constants';
 import { DEFAULT_SETTINGS } from '../lib/settings';
 import { setSettings } from '../lib/storage';
 
-export default defineBackground(() => {
+const background: BackgroundDefinition = defineBackground(() => {
   chrome.runtime.onInstalled.addListener(async ({ reason }) => {
     if (reason !== 'install') {
       return;
@@ -18,3 +19,5 @@ export default defineBackground(() => {
     chrome.runtime.openOptionsPage();
   });
 });
+
+export default background;
