@@ -1,0 +1,22 @@
+{
+  "extends": "../../tsconfig.base.json",
+  "compilerOptions": {
+    "target": "ES2022",
+    "lib": ["dom", "dom.iterable", "ES2022"],
+    "jsx": "react-jsx",
+    "module": "esnext",
+    "moduleResolution": "bundler",
+    "resolveJsonModule": true,
+    "isolatedModules": true,
+    "allowImportingTsExtensions": true,
+    "noEmit": true,
+    "baseUrl": "../../",
+    "paths": {
+      "@/*": ["apps/extension/src/*"]
+    },
+    "types": ["chrome"],
+    "incremental": true
+  },
+  "include": ["src/**/*.ts", "src/**/*.tsx", "src/**/*.html"],
+  "exclude": ["node_modules", "dist", ".output"]
+}

@@ -17,6 +17,9 @@ export default [
     ignores: [
       '**/dist/**',
       '**/build/**',
+      '**/.output/**',
+      '**/.wxt/**',
+      '**/.vite/**',
       '**/.next/**',
       '**/node_modules/**',
       '**/.turbo/**',

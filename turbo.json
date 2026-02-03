@@ -1,21 +1,11 @@
 {
   "$schema": "https://turbo.build/schema.json",
   "ui": "stream",
-  "globalDependencies": [
-    "tsconfig.json",
-    "turbo.json",
-    "eslint.config.ts"
-  ],
+  "globalDependencies": ["tsconfig.json", "turbo.json", "eslint.config.ts"],
   "tasks": {
     "build": {
-      "dependsOn": [
-        "build:components"
-      ],
-      "outputs": [
-        "dist/**",
-        ".next/**",
-        "build/**"
-      ],
+      "dependsOn": ["build:components"],
+      "outputs": ["dist/**", ".next/**", "build/**", ".output/**"],
       "inputs": [
         "src/**",
         "prisma/**",
@@ -26,67 +16,38 @@
       ]
     },
     "build:components": {
-      "outputs": [
-        "dist/**"
-      ],
-      "inputs": [
-        "src/**/*.tsx",
-        "src/**/*.ts",
-        "tsconfig.json"
-      ]
+      "outputs": ["dist/**"],
+      "inputs": ["src/**/*.tsx", "src/**/*.ts", "tsconfig.json"]
     },
     "typecheck": {
-      "dependsOn": [
-        "db:generate"
-      ],
+      "dependsOn": ["db:generate"],
       "cache": true,
-      "inputs": [
-        "src/**",
-        "prisma/**",
-        "tsconfig.json",
-        "package.json"
-      ]
+      "inputs": ["src/**", "prisma/**", "tsconfig.json", "package.json"]
     },
     "dev": {
-      "dependsOn": [
-        "db:generate"
-      ],
+      "dependsOn": ["db:generate"],
       "cache": false,
       "persistent": true,
-      "with": [
-        "dev:components"
-      ]
+      "with": ["dev:components"]
     },
     "dev:components": {
       "cache": false,
       "persistent": true,
-      "outputs": [
-        "dist/**"
-      ]
+      "outputs": ["dist/**"]
     },
     "db:generate": {
       "cache": false,
-      "env": [
-        "DATABASE_URL"
-      ]
+      "env": ["DATABASE_URL"]
     },
     "lint": {
       "dependsOn": [],
-      "inputs": [
-        "src/**",
-        "eslint.config.*",
-        "package.json"
-      ],
+      "inputs": ["src/**", "eslint.config.*", "package.json"],
       "outputs": []
     },
     "lint:fix": {
       "dependsOn": [],
       "cache": false,
-      "inputs": [
-        "src/**",
-        "eslint.config.*",
-        "package.json"
-      ]
+      "inputs": ["src/**", "eslint.config.*", "package.json"]
     },
     "clean": {
       "cache": false,
@@ -103,30 +64,22 @@
     "db:migrate": {
       "cache": false,
       "outputs": [],
-      "env": [
-        "DATABASE_URL"
-      ]
+      "env": ["DATABASE_URL"]
     },
     "db:push": {
       "cache": false,
       "outputs": [],
-      "env": [
-        "DATABASE_URL"
-      ]
+      "env": ["DATABASE_URL"]
     },
     "db:studio": {
       "cache": false,
       "persistent": true,
-      "env": [
-        "DATABASE_URL"
-      ]
+      "env": ["DATABASE_URL"]
     },
     "db:seed": {
       "cache": false,
       "outputs": [],
-      "env": [
-        "DATABASE_URL"
-      ]
+      "env": ["DATABASE_URL"]
     },
     "email:dev": {
       "cache": false,

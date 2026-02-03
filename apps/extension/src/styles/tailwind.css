@@ -1,0 +1,65 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  :root {
+    color-scheme: light;
+  }
+
+  body {
+    @apply bg-zinc-50 text-zinc-900 antialiased;
+    font-family: "Plus Jakarta Sans", "Segoe UI", system-ui, sans-serif;
+  }
+}
+
+@layer components {
+  .card {
+    @apply rounded-2xl border border-zinc-200 bg-white p-4 shadow-sm;
+  }
+
+  .button-primary {
+    @apply inline-flex items-center justify-center rounded-xl bg-brand-600 px-4 py-2 text-sm font-semibold text-white transition hover:bg-brand-700;
+  }
+
+  .button-ghost {
+    @apply inline-flex items-center justify-center rounded-xl border border-zinc-200 bg-white px-3 py-2 text-sm font-medium text-zinc-700 transition hover:bg-zinc-100;
+  }
+
+  .chip {
+    @apply inline-flex items-center gap-2 rounded-full border border-zinc-200 bg-zinc-100 px-3 py-1 text-xs font-semibold text-zinc-700;
+  }
+}
+
+@media (prefers-color-scheme: dark) {
+  :root {
+    color-scheme: dark;
+  }
+
+  body {
+    background-color: #09090b;
+    color: #e4e4e7;
+  }
+
+  .card {
+    border-color: #27272a;
+    background-color: #18181b;
+    box-shadow: 0 10px 20px -15px rgba(0, 0, 0, 0.6);
+  }
+
+  .button-ghost {
+    border-color: #27272a;
+    background-color: #09090b;
+    color: #e4e4e7;
+  }
+
+  .button-ghost:hover {
+    background-color: #18181b;
+  }
+
+  .chip {
+    border-color: #27272a;
+    background-color: #18181b;
+    color: #d4d4d8;
+  }
+}

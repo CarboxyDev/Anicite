@@ -10,6 +10,7 @@
     "dev:debug": "turbo run dev --verbose",
     "dev:web": "turbo run dev --filter @repo/web",
     "dev:api": "turbo run dev --filter @repo/api",
+    "dev:extension": "turbo run dev --filter @repo/extension",
     "dev:app": "turbo run dev --filter @repo/web --filter @repo/api",
     "email": "turbo run email:dev",
     "build": "turbo run build",
