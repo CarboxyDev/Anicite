@@ -1,0 +1,30 @@
+node_modules
+dist
+build
+.next
+.turbo
+coverage
+*.log
+.env
+.env.local
+.env.*.local
+.DS_Store
+.temp
+tsconfig.tsbuildinfo
+*.tsbuildinfo
+next-env.d.ts
+
+# Prisma
+apps/api/src/generated/
+
+# File uploads (local storage)
+apps/api/public/uploads/
+
+# Turborepo analysis files
+graph.html
+dev-graph.html
+build-plan.json
+
+# AI agents
+.claude
+.cursor

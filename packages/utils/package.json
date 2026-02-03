@@ -1,0 +1,23 @@
+{
+  "name": "@repo/packages-utils",
+  "version": "1.0.0",
+  "type": "module",
+  "exports": {
+    "./array": "./src/array.ts",
+    "./async": "./src/async.ts",
+    "./date": "./src/date.ts",
+    "./errors": "./src/errors.ts",
+    "./number": "./src/number.ts",
+    "./string": "./src/string.ts"
+  },
+  "scripts": {
+    "typecheck": "tsc --noEmit",
+    "lint": "eslint src",
+    "lint:fix": "eslint src --fix",
+    "test": "vitest run",
+    "test:unit": "vitest run",
+    "test:integration": "echo 'No integration tests for packages-utils'",
+    "test:watch": "vitest",
+    "test:coverage": "vitest run --coverage"
+  }
+}
