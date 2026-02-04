@@ -24,6 +24,17 @@ export type AggregatedStats = {
 
 const DAY_NAMES = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
 
+function getRelativeLabel(dateKey: string): string | null {
+  const today = getLocalDateKey(new Date());
+  if (dateKey === today) return 'Today';
+
+  const yesterday = new Date();
+  yesterday.setDate(yesterday.getDate() - 1);
+  if (dateKey === getLocalDateKey(yesterday)) return 'Yest';
+
+  return null;
+}
+
 function emptyTotals(): StatsTotals {
   return {
     visits: 0,
@@ -36,6 +47,9 @@ function emptyTotals(): StatsTotals {
 }
 
 export function getDayLabel(dateKey: string): string {
+  const relative = getRelativeLabel(dateKey);
+  if (relative) return relative;
+
   const [year, month, day] = dateKey.split('-').map(Number);
   const date = new Date(year, month - 1, day);
   return DAY_NAMES[date.getDay()];

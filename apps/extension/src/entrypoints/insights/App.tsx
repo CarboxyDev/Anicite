@@ -5,7 +5,7 @@ import {
   Settings as SettingsIcon,
   SwatchBook,
 } from 'lucide-react';
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useTransition } from 'react';
 
 import { formatDuration } from '../../lib/format';
 import {
@@ -22,10 +22,20 @@ const PERIODS: { value: Period; label: string }[] = [
   { value: 'all', label: 'All Time' },
 ];
 
+function EmptyState({ period }: { period: Period }) {
+  const message =
+    period === 'today'
+      ? 'Start browsing to see your activity for today.'
+      : 'No activity recorded for this period.';
+
+  return <p className="text-muted-foreground mt-4 text-sm">{message}</p>;
+}
+
 export function App() {
-  const [period, setPeriod] = useState<Period>('7days');
+  const [period, setPeriod] = useState<Period>('today');
   const [data, setData] = useState<AggregatedStats | null>(null);
   const [isLoading, setIsLoading] = useState(true);
+  const [isPending, startTransition] = useTransition();
 
   useEffect(() => {
     const loadData = async () => {
@@ -38,6 +48,12 @@ export function App() {
     void loadData();
   }, [period]);
 
+  const handlePeriodChange = (newPeriod: Period) => {
+    startTransition(() => {
+      setPeriod(newPeriod);
+    });
+  };
+
   const maxDayMs =
     data?.byDate.reduce((max, d) => Math.max(max, d.stats.activeMs), 0) ?? 0;
   const maxSiteMs = data?.topSites[0]?.stats.activeMs ?? 0;
@@ -46,16 +62,51 @@ export function App() {
     return (
       <div className="bg-background text-foreground min-h-screen px-6 py-12">
         <div className="mx-auto max-w-2xl">
-          <header className="mb-10">
-            <div className="bg-muted h-3 w-16 animate-pulse rounded" />
-            <div className="bg-muted mt-3 h-7 w-32 animate-pulse rounded" />
-            <div className="bg-muted mt-2 h-4 w-64 animate-pulse rounded" />
+          <header className="mb-8">
+            <div className="flex items-start justify-between">
+              <div>
+                <div className="bg-muted h-3 w-16 animate-pulse rounded" />
+                <div className="bg-muted mt-3 h-7 w-24 animate-pulse rounded" />
+                <div className="bg-muted mt-2 h-4 w-52 animate-pulse rounded" />
+              </div>
+              <div className="bg-muted h-9 w-9 animate-pulse rounded-md" />
+            </div>
           </header>
+          <div className="mb-6 flex gap-1">
+            {PERIODS.map((p) => (
+              <div
+                key={p.value}
+                className="bg-muted h-8 w-16 animate-pulse rounded"
+              />
+            ))}
+          </div>
           <div className="space-y-6">
-            {[1, 2, 3].map((i) => (
+            <div className="card">
+              <div className="bg-muted h-4 w-20 animate-pulse rounded" />
+              <div className="mt-4 grid grid-cols-2 gap-4 sm:grid-cols-4">
+                {[1, 2, 3, 4].map((i) => (
+                  <div key={i} className="flex items-center gap-3">
+                    <div className="bg-muted h-10 w-10 animate-pulse rounded-lg" />
+                    <div>
+                      <div className="bg-muted h-3 w-10 animate-pulse rounded" />
+                      <div className="bg-muted mt-1 h-5 w-12 animate-pulse rounded" />
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+            {[1, 2].map((i) => (
               <div key={i} className="card">
-                <div className="bg-muted h-5 w-24 animate-pulse rounded" />
-                <div className="bg-muted mt-4 h-20 w-full animate-pulse rounded" />
+                <div className="bg-muted h-4 w-24 animate-pulse rounded" />
+                <div className="bg-muted mt-1 h-3 w-32 animate-pulse rounded" />
+                <div className="mt-4 space-y-3">
+                  {[1, 2, 3].map((j) => (
+                    <div
+                      key={j}
+                      className="bg-muted h-6 w-full animate-pulse rounded"
+                    />
+                  ))}
+                </div>
               </div>
             ))}
           </div>
@@ -98,7 +149,7 @@ export function App() {
             <button
               key={p.value}
               className={`btn btn-sm ${period === p.value ? 'btn-primary' : 'btn-ghost'}`}
-              onClick={() => setPeriod(p.value)}
+              onClick={() => handlePeriodChange(p.value)}
               type="button"
             >
               {p.label}
@@ -106,7 +157,9 @@ export function App() {
           ))}
         </div>
 
-        <div className="space-y-6">
+        <div
+          className={`space-y-6 transition-opacity duration-150 ${isPending ? 'opacity-60' : 'opacity-100'}`}
+        >
           <section className="card">
             <h2 className="text-sm font-semibold">Overview</h2>
             <div className="mt-4 grid grid-cols-2 gap-4 sm:grid-cols-4">
@@ -172,12 +225,12 @@ export function App() {
                       key={day.date}
                       className="flex items-center gap-3 text-xs"
                     >
-                      <span className="text-muted-foreground w-8 shrink-0">
+                      <span className="text-muted-foreground w-10 shrink-0">
                         {day.label}
                       </span>
                       <div className="bg-muted h-5 flex-1 overflow-hidden rounded">
                         <div
-                          className="bg-primary h-full rounded transition-all"
+                          className="bg-primary h-full rounded transition-all duration-300"
                           style={{ width: `${pct}%` }}
                         />
                       </div>
@@ -189,9 +242,7 @@ export function App() {
                 })}
               </div>
             ) : (
-              <p className="text-muted-foreground mt-4 text-sm">
-                No activity data for this period.
-              </p>
+              <EmptyState period={period} />
             )}
           </section>
 
@@ -224,7 +275,7 @@ export function App() {
                       <div className="ml-7">
                         <div className="bg-muted h-1.5 overflow-hidden rounded-full">
                           <div
-                            className="bg-primary/60 h-full rounded-full transition-all"
+                            className="bg-primary/60 h-full rounded-full transition-all duration-300"
                             style={{ width: `${pct}%` }}
                           />
                         </div>
@@ -234,9 +285,7 @@ export function App() {
                 })}
               </div>
             ) : (
-              <p className="text-muted-foreground mt-4 text-sm">
-                No sites tracked for this period.
-              </p>
+              <EmptyState period={period} />
             )}
           </section>
         </div>

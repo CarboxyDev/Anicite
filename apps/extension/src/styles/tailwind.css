@@ -3,6 +3,10 @@
 @tailwind utilities;
 
 @layer base {
+  html {
+    overflow-y: scroll;
+  }
+
   :root {
     --background: oklch(0.994 0 0);
     --foreground: oklch(0 0 0);
