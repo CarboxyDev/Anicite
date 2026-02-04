@@ -3,9 +3,11 @@ import { DEFAULT_SETTINGS, type Settings } from './settings';
 
 export type StatsTotals = {
   visits: number;
+  sessions: number;
   activeMs: number;
   clicks: number;
   scrollMax: number;
+  tabSwitches: number;
 };
 
 export type PageStats = {
@@ -27,9 +29,11 @@ export type Store = {
 function emptyTotals(): StatsTotals {
   return {
     visits: 0,
+    sessions: 0,
     activeMs: 0,
     clicks: 0,
     scrollMax: 0,
+    tabSwitches: 0,
   };
 }
 
@@ -86,9 +90,11 @@ export async function setStore(store: Store): Promise<void> {
 
 export type StatsDelta = {
   visits?: number;
+  sessions?: number;
   activeMs?: number;
   clicks?: number;
   scrollMax?: number;
+  tabSwitches?: number;
 };
 
 export type UpdatePageArgs = {
@@ -126,15 +132,21 @@ export async function updatePageStats({
   const day = page.byDate[dateKey] ?? emptyTotals();
 
   const visits = delta.visits ?? 0;
+  const sessions = delta.sessions ?? 0;
   const activeMs = delta.activeMs ?? 0;
   const clicks = delta.clicks ?? 0;
+  const tabSwitches = delta.tabSwitches ?? 0;
 
   page.totals.visits += visits;
+  page.totals.sessions += sessions;
   page.totals.activeMs += activeMs;
   page.totals.clicks += clicks;
+  page.totals.tabSwitches += tabSwitches;
   day.visits += visits;
+  day.sessions += sessions;
   day.activeMs += activeMs;
   day.clicks += clicks;
+  day.tabSwitches += tabSwitches;
 
   if (typeof delta.scrollMax === 'number') {
     page.totals.scrollMax = Math.max(page.totals.scrollMax, delta.scrollMax);

@@ -18,9 +18,11 @@ import { getUrlParts } from '../../lib/url';
 
 const DEFAULT_STATS: StatsTotals = {
   visits: 0,
+  sessions: 0,
   activeMs: 0,
   clicks: 0,
   scrollMax: 0,
+  tabSwitches: 0,
 };
 
 export function App() {

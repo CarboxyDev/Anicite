@@ -4,10 +4,11 @@ import { defineContentScript } from 'wxt/sandbox';
 import { SETTINGS_KEY } from '../lib/constants';
 import { getLocalDateKey } from '../lib/date';
 import { type DataGranularity, isHostExcluded } from '../lib/settings';
-import { getSettings, updatePageStats } from '../lib/storage';
+import { getSettings, getStore, updatePageStats } from '../lib/storage';
 import { getUrlParts } from '../lib/url';
 
 const FLUSH_INTERVAL_MS = 10000;
+const SESSION_GAP_MS = 30 * 60 * 1000;
 
 const contentScript: ContentScriptDefinition = defineContentScript({
   matches: ['<all_urls>'],
@@ -38,9 +39,11 @@ const contentScript: ContentScriptDefinition = defineContentScript({
       document.visibilityState === 'visible' ? Date.now() : null;
     let clicks = 0;
     let scrollMax = 0;
+    let tabSwitches = 0;
 
     let lastFlushedActiveMs = 0;
     let lastFlushedClicks = 0;
+    let lastFlushedTabSwitches = 0;
 
     const dateKey = getLocalDateKey();
 
@@ -69,13 +72,23 @@ const contentScript: ContentScriptDefinition = defineContentScript({
         : activeMs;
       const deltaActiveMs = Math.max(0, totalActiveMs - lastFlushedActiveMs);
       const deltaClicks = Math.max(0, clicks - lastFlushedClicks);
+      const deltaTabSwitches = Math.max(
+        0,
+        tabSwitches - lastFlushedTabSwitches
+      );
 
-      if (deltaActiveMs === 0 && deltaClicks === 0 && scrollMax === 0) {
+      if (
+        deltaActiveMs === 0 &&
+        deltaClicks === 0 &&
+        deltaTabSwitches === 0 &&
+        scrollMax === 0
+      ) {
         return;
       }
 
       lastFlushedActiveMs = totalActiveMs;
       lastFlushedClicks = clicks;
+      lastFlushedTabSwitches = tabSwitches;
 
       await updatePageStats({
         key: urlParts.key,
@@ -87,6 +100,7 @@ const contentScript: ContentScriptDefinition = defineContentScript({
           activeMs: deltaActiveMs,
           clicks: deltaClicks,
           scrollMax,
+          tabSwitches: deltaTabSwitches,
         },
       });
     };
@@ -97,6 +111,7 @@ const contentScript: ContentScriptDefinition = defineContentScript({
           activeMs += Date.now() - lastActiveAt;
           lastActiveAt = null;
         }
+        tabSwitches += 1;
         void flush();
       } else if (!lastActiveAt) {
         lastActiveAt = Date.now();
@@ -139,6 +154,12 @@ const contentScript: ContentScriptDefinition = defineContentScript({
       dataGranularity = next.dataGranularity ?? 'path';
     });
 
+    const store = await getStore();
+    const existingPage = store.pages[urlParts.key];
+    const now = Date.now();
+    const isNewSession =
+      !existingPage || now - existingPage.lastSeenAt > SESSION_GAP_MS;
+
     await updatePageStats({
       key: urlParts.key,
       url: urlParts.url,
@@ -147,6 +168,7 @@ const contentScript: ContentScriptDefinition = defineContentScript({
       dateKey,
       delta: {
         visits: 1,
+        sessions: isNewSession ? 1 : 0,
       },
     });
 
