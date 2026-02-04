@@ -85,8 +85,8 @@ export function App() {
     return (
       <div className="bg-background text-foreground flex min-h-screen items-center justify-center px-6 py-12">
         <div className="w-full max-w-md text-center">
-          <div className="bg-success border-success flex h-16 w-16 items-center justify-center rounded-full border">
-            <Check className="size-8 text-white" strokeWidth={2.5} />
+          <div className="bg-success border-success mx-auto mb-10 flex size-16 items-center justify-center rounded-full border">
+            <Check className="size-8 text-white" strokeWidth={4} />
           </div>
           <h1 className="text-2xl font-semibold">You're all set</h1>
           <p className="text-muted-foreground mt-2 text-sm">
