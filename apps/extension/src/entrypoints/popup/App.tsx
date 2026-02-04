@@ -1,3 +1,4 @@
+import { Settings as SettingsIcon } from 'lucide-react';
 import { useEffect, useMemo, useState } from 'react';
 
 import { getLocalDateKey } from '../../lib/date';
@@ -32,10 +33,8 @@ export function App() {
     return isHostExcluded(currentHost, settings.excludeHosts);
   }, [currentHost, settings.excludeHosts]);
 
-  const onboardingProgress = useMemo(() => {
-    const total = Object.keys(settings.onboarding).length;
-    const completed = Object.values(settings.onboarding).filter(Boolean).length;
-    return { total, completed, isComplete: completed === total };
+  const isOnboardingComplete = useMemo(() => {
+    return Object.values(settings.onboarding).every(Boolean);
   }, [settings.onboarding]);
 
   useEffect(() => {
@@ -77,8 +76,35 @@ export function App() {
     void init();
   }, []);
 
+  if (!isOnboardingComplete) {
+    return (
+      <div className="bg-background text-foreground w-[320px] p-5 text-sm">
+        <div className="text-center">
+          <p className="text-primary text-xs font-semibold uppercase tracking-widest">
+            Anicite
+          </p>
+          <h1 className="mt-2 text-lg font-semibold">Complete setup</h1>
+          <p className="text-muted-foreground mt-2 text-sm">
+            Finish the onboarding to start tracking your browsing activity.
+          </p>
+          <button
+            className="btn btn-primary mt-5 w-full"
+            onClick={() =>
+              chrome.tabs.create({
+                url: chrome.runtime.getURL('onboarding.html'),
+              })
+            }
+            type="button"
+          >
+            Continue setup
+          </button>
+        </div>
+      </div>
+    );
+  }
+
   return (
-    <div className="bg-background text-foreground relative min-h-screen w-[360px] p-4 pb-16 text-sm">
+    <div className="bg-background text-foreground w-[320px] p-4 text-sm">
       <div className="space-y-3">
         <div className="card space-y-4">
           <div className="flex items-center justify-between gap-3">
@@ -88,11 +114,14 @@ export function App() {
               </p>
               <h1 className="text-lg font-semibold">Today</h1>
             </div>
-            <span
-              className={`badge ${onboardingProgress.isComplete ? 'badge-success' : 'badge-muted'}`}
+            <button
+              className="text-muted-foreground hover:text-foreground hover:bg-muted -mr-1 rounded-md p-1.5 transition-colors"
+              onClick={() => chrome.runtime.openOptionsPage()}
+              title="Settings"
+              type="button"
             >
-              {onboardingProgress.completed}/{onboardingProgress.total} done
-            </span>
+              <SettingsIcon className="h-4 w-4" />
+            </button>
           </div>
 
           <div className="grid grid-cols-2 gap-3 text-xs">
@@ -138,25 +167,6 @@ export function App() {
               Open a site to see this tab's stats.
             </p>
           )}
-        </div>
-      </div>
-
-      <div className="border-border bg-background/95 fixed bottom-0 left-0 right-0 border-t px-4 py-3 backdrop-blur">
-        <div className="flex items-center justify-between gap-3">
-          <button
-            className="text-primary text-xs font-semibold hover:underline"
-            onClick={() => chrome.runtime.openOptionsPage()}
-            type="button"
-          >
-            Settings
-          </button>
-          <button
-            className="btn btn-primary btn-sm"
-            onClick={() => window.close()}
-            type="button"
-          >
-            Done
-          </button>
         </div>
       </div>
     </div>
