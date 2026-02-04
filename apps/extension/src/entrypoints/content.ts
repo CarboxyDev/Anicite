@@ -7,7 +7,7 @@ import { type DataGranularity, isHostExcluded } from '../lib/settings';
 import { getSettings, updatePageStats } from '../lib/storage';
 import { getUrlParts } from '../lib/url';
 
-const FLUSH_INTERVAL_MS = 30000;
+const FLUSH_INTERVAL_MS = 10000;
 
 const contentScript: ContentScriptDefinition = defineContentScript({
   matches: ['<all_urls>'],
@@ -21,6 +21,11 @@ const contentScript: ContentScriptDefinition = defineContentScript({
     enabled = settings.enabled;
     excludeHosts = settings.excludeHosts;
     dataGranularity = settings.dataGranularity;
+
+    const hasConsent = settings.onboarding.consentConfirmed;
+    if (!hasConsent) {
+      return;
+    }
 
     const urlParts = getUrlParts(window.location.href, dataGranularity);
 
