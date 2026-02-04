@@ -7,7 +7,7 @@ import { type DataGranularity, isHostExcluded } from '../lib/settings';
 import { getSettings, getStore, updatePageStats } from '../lib/storage';
 import { getUrlParts } from '../lib/url';
 
-const FLUSH_INTERVAL_MS = 10000;
+const FLUSH_INTERVAL_MS = 5000;
 const SESSION_GAP_MS = 30 * 60 * 1000;
 
 const contentScript: ContentScriptDefinition = defineContentScript({
@@ -44,8 +44,6 @@ const contentScript: ContentScriptDefinition = defineContentScript({
     let lastFlushedActiveMs = 0;
     let lastFlushedClicks = 0;
     let lastFlushedTabSwitches = 0;
-
-    const dateKey = getLocalDateKey();
 
     const updateScrollMax = () => {
       const scrollHeight =
@@ -95,7 +93,7 @@ const contentScript: ContentScriptDefinition = defineContentScript({
         url: urlParts.url,
         host: urlParts.host,
         path: urlParts.path,
-        dateKey,
+        dateKey: getLocalDateKey(),
         delta: {
           activeMs: deltaActiveMs,
           clicks: deltaClicks,
@@ -165,7 +163,7 @@ const contentScript: ContentScriptDefinition = defineContentScript({
       url: urlParts.url,
       host: urlParts.host,
       path: urlParts.path,
-      dateKey,
+      dateKey: getLocalDateKey(),
       delta: {
         visits: 1,
         sessions: isNewSession ? 1 : 0,
