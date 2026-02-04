@@ -3,36 +3,43 @@ import { defineContentScript } from 'wxt/sandbox';
 
 import { SETTINGS_KEY } from '../lib/constants';
 import { getLocalDateKey } from '../lib/date';
-import { type DataGranularity, isHostExcluded } from '../lib/settings';
+import { isHostExcluded } from '../lib/settings';
 import { getSettings, getStore, updatePageStats } from '../lib/storage';
 import { getUrlParts } from '../lib/url';
 
 const FLUSH_INTERVAL_MS = 5000;
 const SESSION_GAP_MS = 30 * 60 * 1000;
 
+function isContextValid(): boolean {
+  return typeof chrome !== 'undefined' && !!chrome.runtime?.id;
+}
+
 const contentScript: ContentScriptDefinition = defineContentScript({
   matches: ['<all_urls>'],
   runAt: 'document_idle',
   async main() {
-    let enabled = true;
-    let excludeHosts: string[] = [];
-    let dataGranularity: DataGranularity = 'path';
+    if (!isContextValid()) return;
 
-    const settings = await getSettings();
-    enabled = settings.enabled;
-    excludeHosts = settings.excludeHosts;
-    dataGranularity = settings.dataGranularity;
-
-    const hasConsent = settings.onboarding.consentConfirmed;
-    if (!hasConsent) {
+    let settings;
+    try {
+      settings = await getSettings();
+    } catch {
       return;
     }
+
+    const hasConsent = settings.onboarding.consentConfirmed;
+    if (!hasConsent) return;
+
+    let enabled = settings.enabled;
+    let excludeHosts = settings.excludeHosts;
+    const dataGranularity = settings.dataGranularity;
 
     const urlParts = getUrlParts(window.location.href, dataGranularity);
 
-    if (!enabled || isHostExcluded(urlParts.host, excludeHosts)) {
-      return;
-    }
+    if (!enabled || isHostExcluded(urlParts.host, excludeHosts)) return;
+
+    let stopped = false;
+    let intervalId: number | undefined;
 
     let activeMs = 0;
     let lastActiveAt =
@@ -44,6 +51,12 @@ const contentScript: ContentScriptDefinition = defineContentScript({
     let lastFlushedActiveMs = 0;
     let lastFlushedClicks = 0;
     let lastFlushedTabSwitches = 0;
+
+    const stop = () => {
+      if (stopped) return;
+      stopped = true;
+      if (intervalId !== undefined) window.clearInterval(intervalId);
+    };
 
     const updateScrollMax = () => {
       const scrollHeight =
@@ -60,9 +73,12 @@ const contentScript: ContentScriptDefinition = defineContentScript({
     };
 
     const flush = async () => {
-      if (!enabled || isHostExcluded(urlParts.host, excludeHosts)) {
+      if (stopped || !isContextValid()) {
+        stop();
         return;
       }
+
+      if (!enabled || isHostExcluded(urlParts.host, excludeHosts)) return;
 
       const now = Date.now();
       const totalActiveMs = lastActiveAt
@@ -88,22 +104,27 @@ const contentScript: ContentScriptDefinition = defineContentScript({
       lastFlushedClicks = clicks;
       lastFlushedTabSwitches = tabSwitches;
 
-      await updatePageStats({
-        key: urlParts.key,
-        url: urlParts.url,
-        host: urlParts.host,
-        path: urlParts.path,
-        dateKey: getLocalDateKey(),
-        delta: {
-          activeMs: deltaActiveMs,
-          clicks: deltaClicks,
-          scrollMax,
-          tabSwitches: deltaTabSwitches,
-        },
-      });
+      try {
+        await updatePageStats({
+          key: urlParts.key,
+          url: urlParts.url,
+          host: urlParts.host,
+          path: urlParts.path,
+          dateKey: getLocalDateKey(),
+          delta: {
+            activeMs: deltaActiveMs,
+            clicks: deltaClicks,
+            scrollMax,
+            tabSwitches: deltaTabSwitches,
+          },
+        });
+      } catch {
+        stop();
+      }
     };
 
     const handleVisibilityChange = () => {
+      if (stopped) return;
       if (document.visibilityState === 'hidden') {
         if (lastActiveAt) {
           activeMs += Date.now() - lastActiveAt;
@@ -116,6 +137,17 @@ const contentScript: ContentScriptDefinition = defineContentScript({
       }
     };
 
+    const handleStorageChange = (
+      changes: { [key: string]: chrome.storage.StorageChange },
+      areaName: string
+    ) => {
+      if (stopped || areaName !== 'local') return;
+      const next = changes[SETTINGS_KEY]?.newValue;
+      if (!next) return;
+      enabled = Boolean(next.enabled);
+      excludeHosts = next.excludeHosts ?? [];
+    };
+
     document.addEventListener('visibilitychange', handleVisibilityChange);
     window.addEventListener('pagehide', () => {
       if (lastActiveAt) {
@@ -124,57 +156,55 @@ const contentScript: ContentScriptDefinition = defineContentScript({
       }
       void flush();
     });
-
     document.addEventListener('click', () => {
-      clicks += 1;
+      if (!stopped) clicks += 1;
     });
+    window.addEventListener('scroll', updateScrollMax, { passive: true });
 
-    const scrollListener = () => {
-      updateScrollMax();
-    };
-
-    window.addEventListener('scroll', scrollListener, { passive: true });
-
-    const interval = window.setInterval(() => {
+    intervalId = window.setInterval(() => {
       void flush();
     }, FLUSH_INTERVAL_MS);
 
-    chrome.storage.onChanged.addListener((changes, areaName) => {
-      if (areaName !== 'local') {
-        return;
-      }
-      const next = changes[SETTINGS_KEY]?.newValue;
-      if (!next) {
-        return;
-      }
-      enabled = Boolean(next.enabled);
-      excludeHosts = next.excludeHosts ?? [];
-      dataGranularity = next.dataGranularity ?? 'path';
-    });
+    try {
+      chrome.storage.onChanged.addListener(handleStorageChange);
+    } catch {
+      stop();
+      return;
+    }
 
-    const store = await getStore();
+    let store;
+    try {
+      store = await getStore();
+    } catch {
+      stop();
+      return;
+    }
+
     const existingPage = store.pages[urlParts.key];
     const now = Date.now();
     const isNewSession =
       !existingPage || now - existingPage.lastSeenAt > SESSION_GAP_MS;
 
-    await updatePageStats({
-      key: urlParts.key,
-      url: urlParts.url,
-      host: urlParts.host,
-      path: urlParts.path,
-      dateKey: getLocalDateKey(),
-      delta: {
-        visits: 1,
-        sessions: isNewSession ? 1 : 0,
-      },
-    });
+    try {
+      await updatePageStats({
+        key: urlParts.key,
+        url: urlParts.url,
+        host: urlParts.host,
+        path: urlParts.path,
+        dateKey: getLocalDateKey(),
+        delta: {
+          visits: 1,
+          sessions: isNewSession ? 1 : 0,
+        },
+      });
+    } catch {
+      stop();
+      return;
+    }
 
     updateScrollMax();
 
-    window.addEventListener('beforeunload', () => {
-      window.clearInterval(interval);
-    });
+    window.addEventListener('beforeunload', stop);
   },
 });
 
