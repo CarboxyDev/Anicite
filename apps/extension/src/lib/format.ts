@@ -7,6 +7,10 @@ export function formatDuration(ms: number): string {
     return `${totalSeconds}s`;
   }
   const totalMinutes = Math.floor(totalSeconds / 60);
+  const seconds = totalSeconds % 60;
+  if (totalMinutes < 10) {
+    return `${totalMinutes}m ${seconds}s`;
+  }
   if (totalMinutes < 60) {
     return `${totalMinutes}m`;
   }

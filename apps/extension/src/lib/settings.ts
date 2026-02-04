@@ -1,5 +1,7 @@
 export type DataGranularity = 'host' | 'path';
 
+export type TrackingMode = 'focused' | 'visible';
+
 export type OnboardingState = {
   consentConfirmed: boolean;
   privacyReviewed: boolean;
@@ -10,6 +12,7 @@ export type Settings = {
   enabled: boolean;
   excludeHosts: string[];
   dataGranularity: DataGranularity;
+  trackingMode: TrackingMode;
   onboarding: OnboardingState;
 };
 
@@ -17,6 +20,7 @@ export const DEFAULT_SETTINGS: Settings = {
   enabled: true,
   excludeHosts: [],
   dataGranularity: 'host',
+  trackingMode: 'focused',
   onboarding: {
     consentConfirmed: false,
     privacyReviewed: false,

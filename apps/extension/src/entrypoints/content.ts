@@ -34,6 +34,7 @@ const contentScript: ContentScriptDefinition = defineContentScript({
 
     let enabled = settings.enabled;
     let excludeHosts = settings.excludeHosts;
+    let trackingMode = settings.trackingMode;
     const dataGranularity = settings.dataGranularity;
 
     const urlParts = getUrlParts(window.location.href, dataGranularity);
@@ -45,8 +46,11 @@ const contentScript: ContentScriptDefinition = defineContentScript({
     let flushInProgress = false;
 
     let activeMs = 0;
-    let lastActiveAt =
-      document.visibilityState === 'visible' ? Date.now() : null;
+    let windowFocused = document.hasFocus();
+    const shouldTrackNow =
+      document.visibilityState === 'visible' &&
+      (trackingMode === 'visible' || windowFocused);
+    let lastActiveAt = shouldTrackNow ? Date.now() : null;
     let clicks = 0;
     let scrollMax = 0;
     let tabSwitches = 0;
@@ -92,7 +96,10 @@ const contentScript: ContentScriptDefinition = defineContentScript({
 
       const now = Date.now();
 
-      if (document.visibilityState === 'visible' && !lastActiveAt) {
+      const shouldBeTracking =
+        document.visibilityState === 'visible' &&
+        (trackingMode === 'visible' || windowFocused);
+      if (shouldBeTracking && !lastActiveAt) {
         lastActiveAt = now;
       }
 
@@ -181,21 +188,24 @@ const contentScript: ContentScriptDefinition = defineContentScript({
         tabSwitches += 1;
         void flush();
       } else {
-        if (!lastActiveAt) {
+        const shouldTrack = trackingMode === 'visible' || windowFocused;
+        if (!lastActiveAt && shouldTrack) {
           lastActiveAt = now;
         }
       }
     };
 
     const handleFocus = () => {
-      if (stopped) return;
+      windowFocused = true;
+      if (stopped || trackingMode !== 'focused') return;
       if (!lastActiveAt && document.visibilityState === 'visible') {
         lastActiveAt = Date.now();
       }
     };
 
     const handleBlur = () => {
-      if (stopped) return;
+      windowFocused = false;
+      if (stopped || trackingMode !== 'focused') return;
       if (lastActiveAt) {
         activeMs += Date.now() - lastActiveAt;
         lastActiveAt = null;
@@ -211,6 +221,7 @@ const contentScript: ContentScriptDefinition = defineContentScript({
       if (!next) return;
       enabled = Boolean(next.enabled);
       excludeHosts = next.excludeHosts ?? [];
+      trackingMode = next.trackingMode ?? 'focused';
     };
 
     document.addEventListener('visibilitychange', handleVisibilityChange);

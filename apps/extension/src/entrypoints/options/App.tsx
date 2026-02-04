@@ -5,6 +5,7 @@ import {
   isValidHost,
   normalizeHost,
   type Settings,
+  type TrackingMode,
 } from '../../lib/settings';
 import { clearStore, getSettings, updateSettings } from '../../lib/storage';
 
@@ -28,6 +29,11 @@ export function App() {
 
   const handleToggleTracking = async () => {
     const next = await updateSettings({ enabled: !settings.enabled });
+    setSettings(next);
+  };
+
+  const handleTrackingModeChange = async (mode: TrackingMode) => {
+    const next = await updateSettings({ trackingMode: mode });
     setSettings(next);
   };
 
@@ -136,6 +142,38 @@ export function App() {
                 Tracking is paused. No browsing data is being collected.
               </p>
             )}
+          </section>
+
+          <section className="card">
+            <div>
+              <h2 className="font-semibold">Time Tracking Mode</h2>
+              <p className="text-muted-foreground mt-1 text-xs">
+                Choose when to count time spent on a page.
+              </p>
+            </div>
+
+            <div className="mt-4 flex gap-2">
+              <button
+                className={`btn btn-sm flex-1 ${settings.trackingMode === 'focused' ? 'btn-primary' : 'btn-ghost'}`}
+                onClick={() => void handleTrackingModeChange('focused')}
+                type="button"
+              >
+                Tab focused
+              </button>
+              <button
+                className={`btn btn-sm flex-1 ${settings.trackingMode === 'visible' ? 'btn-primary' : 'btn-ghost'}`}
+                onClick={() => void handleTrackingModeChange('visible')}
+                type="button"
+              >
+                Tab visible
+              </button>
+            </div>
+
+            <p className="text-muted-foreground mt-3 text-xs">
+              {settings.trackingMode === 'focused'
+                ? 'Time is counted only when the browser window is active. Best for measuring focused attention.'
+                : 'Time is counted whenever the tab is visible, even if another app is focused. Useful for tracking background media or multi-monitor setups.'}
+            </p>
           </section>
 
           <section className="card">
