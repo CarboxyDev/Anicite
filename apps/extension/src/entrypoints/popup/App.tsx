@@ -14,6 +14,7 @@ import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { SETTINGS_KEY, STORAGE_KEY } from '../../lib/constants';
 import { getLocalDateKey } from '../../lib/date';
 import { formatDuration } from '../../lib/format';
+import type { PingResponse } from '../../lib/messaging';
 import {
   DEFAULT_SETTINGS,
   isHostExcluded,
@@ -70,6 +71,7 @@ export function App() {
     sitesCount: 0,
   });
   const [isLoading, setIsLoading] = useState(true);
+  const [isTracking, setIsTracking] = useState(false);
   const currentKeyRef = useRef<string | null>(null);
 
   const isExcluded = useMemo(() => {
@@ -105,7 +107,7 @@ export function App() {
         currentWindow: true,
       });
 
-      if (tab?.url) {
+      if (tab?.url && tab.id) {
         const urlParts = getUrlParts(tab.url, storedSettings.dataGranularity);
         setCurrentHost(urlParts.host);
         setCurrentKey(urlParts.key);
@@ -113,6 +115,16 @@ export function App() {
 
         const store = await getStore();
         updateFromStore(store);
+
+        try {
+          const response = await chrome.tabs.sendMessage<
+            { type: 'PING' },
+            PingResponse
+          >(tab.id, { type: 'PING' });
+          setIsTracking(response?.active ?? false);
+        } catch {
+          setIsTracking(false);
+        }
       }
 
       setIsLoading(false);
@@ -254,15 +266,25 @@ export function App() {
         <div className="card space-y-3">
           <div className="flex items-start justify-between gap-2">
             <div>
-              <p className="text-muted-foreground text-xs">Active site</p>
+              <div className="flex items-baseline gap-1.5">
+                <p className="text-muted-foreground text-xs leading-none">
+                  Active site
+                </p>
+                {isTracking && (
+                  <span
+                    className="h-1.5 w-1.5 shrink-0 self-center rounded-full bg-green-500"
+                    title="Tracking active"
+                  />
+                )}
+                {isExcluded && (
+                  <span className="text-destructive text-[10px] leading-none">
+                    Excluded
+                  </span>
+                )}
+              </div>
               <p className="font-semibold">
                 {currentHost ?? (isLoading ? 'Loading...' : 'No active tab')}
               </p>
-              {isExcluded && (
-                <p className="text-destructive text-xs">
-                  Excluded from tracking
-                </p>
-              )}
             </div>
             {currentHost && (
               <button

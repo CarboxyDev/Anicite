@@ -25,7 +25,15 @@ export type StatsResponse = {
   error?: string;
 };
 
-export type Message = UpdateStatsMessage | GetStatsMessage;
+export type PingMessage = {
+  type: 'PING';
+};
+
+export type PingResponse = {
+  active: boolean;
+};
+
+export type Message = UpdateStatsMessage | GetStatsMessage | PingMessage;
 
 export function sendUpdateStats(
   payload: UpdateStatsMessage['payload']

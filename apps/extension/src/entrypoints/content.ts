@@ -3,6 +3,7 @@ import { defineContentScript } from 'wxt/sandbox';
 
 import { SETTINGS_KEY } from '../lib/constants';
 import { getLocalDateKey } from '../lib/date';
+import type { PingMessage, PingResponse } from '../lib/messaging';
 import { sendUpdateStats } from '../lib/messaging';
 import { isHostExcluded } from '../lib/settings';
 import { getSettings, getStore } from '../lib/storage';
@@ -236,6 +237,25 @@ const contentScript: ContentScriptDefinition = defineContentScript({
 
     try {
       chrome.storage.onChanged.addListener(handleStorageChange);
+    } catch {
+      stop();
+      return;
+    }
+
+    const handlePing = (
+      message: PingMessage,
+      _sender: chrome.runtime.MessageSender,
+      sendResponse: (response: PingResponse) => void
+    ) => {
+      if (message.type === 'PING') {
+        sendResponse({ active: !stopped });
+        return true;
+      }
+      return false;
+    };
+
+    try {
+      chrome.runtime.onMessage.addListener(handlePing);
     } catch {
       stop();
       return;
