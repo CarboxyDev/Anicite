@@ -1,9 +1,8 @@
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useState } from 'react';
 
 import {
   DEFAULT_SETTINGS,
   normalizeHost,
-  normalizeHostList,
   type Settings,
 } from '../../lib/settings';
 import { clearStore, getSettings, updateSettings } from '../../lib/storage';
@@ -11,64 +10,59 @@ import { clearStore, getSettings, updateSettings } from '../../lib/storage';
 export function App() {
   const [settings, setSettings] = useState<Settings>(DEFAULT_SETTINGS);
   const [newHost, setNewHost] = useState('');
+  const [showClearConfirm, setShowClearConfirm] = useState(false);
+  const [isClearing, setIsClearing] = useState(false);
+  const [clearSuccess, setClearSuccess] = useState(false);
 
   useEffect(() => {
     const init = async () => {
       const storedSettings = await getSettings();
       setSettings(storedSettings);
     };
-
     void init();
   }, []);
 
-  const updateOnboarding = async (key: keyof Settings['onboarding']) => {
-    const next = await updateSettings({
-      onboarding: {
-        ...settings.onboarding,
-        [key]: !settings.onboarding[key],
-      },
-    });
+  const handleToggleTracking = async () => {
+    const next = await updateSettings({ enabled: !settings.enabled });
     setSettings(next);
   };
 
-  const addHost = async () => {
-    const normalized = normalizeHost(newHost);
-    if (!normalized) {
+  const handleAddExclusion = async () => {
+    const host = normalizeHost(newHost);
+    if (!host || settings.excludeHosts.includes(host)) {
+      setNewHost('');
       return;
     }
 
     const next = await updateSettings({
-      excludeHosts: normalizeHostList([...settings.excludeHosts, normalized]),
+      excludeHosts: [...settings.excludeHosts, host],
     });
     setSettings(next);
     setNewHost('');
   };
 
-  const removeHost = async (host: string) => {
-    const normalized = normalizeHost(host);
+  const handleRemoveExclusion = async (host: string) => {
     const next = await updateSettings({
-      excludeHosts: settings.excludeHosts.filter(
-        (item) => normalizeHost(item) !== normalized
-      ),
+      excludeHosts: settings.excludeHosts.filter((h) => h !== host),
     });
     setSettings(next);
   };
 
-  const clearData = async () => {
-    if (
-      !window.confirm('Delete all local tracking data? This cannot be undone.')
-    ) {
-      return;
+  const handleClearData = async () => {
+    setIsClearing(true);
+    try {
+      await clearStore();
+      setClearSuccess(true);
+      setTimeout(() => setClearSuccess(false), 3000);
+    } finally {
+      setIsClearing(false);
+      setShowClearConfirm(false);
     }
-
-    await clearStore();
   };
 
-  const onboardingProgress = useMemo(() => {
-    const total = Object.keys(settings.onboarding).length;
-    const completed = Object.values(settings.onboarding).filter(Boolean).length;
-    return { total, completed, isComplete: completed === total };
-  }, [settings.onboarding]);
+  const openOnboarding = () => {
+    chrome.tabs.create({ url: chrome.runtime.getURL('onboarding.html') });
+  };
 
   const closePage = async () => {
     try {
@@ -78,126 +72,204 @@ export function App() {
         return;
       }
     } catch {
-      // Ignore close failures and fall back to window.close.
+      // Ignore
     }
     window.close();
   };
 
   return (
-    <div className="min-h-screen bg-zinc-50 px-6 py-8 pb-20 text-sm text-zinc-900 dark:bg-zinc-950 dark:text-zinc-100">
-      <div className="mx-auto flex max-w-3xl flex-col gap-6">
-        <header className="flex items-start justify-between gap-4">
-          <div className="space-y-1">
-            <p className="text-brand-500 text-xs uppercase tracking-[0.2em]">
-              Anicite
-            </p>
-            <h1 className="text-2xl font-semibold">Setup</h1>
-            <p className="text-sm text-zinc-600 dark:text-zinc-300">
-              Local-only analytics with explicit consent.
-            </p>
-          </div>
-          <span
-            className={`rounded-full border px-3 py-1 text-[11px] font-semibold ${
-              onboardingProgress.isComplete
-                ? 'border-emerald-200 bg-emerald-100 text-emerald-700 dark:border-emerald-800 dark:bg-emerald-950 dark:text-emerald-200'
-                : 'border-zinc-200 bg-zinc-100 text-zinc-600 dark:border-zinc-800 dark:bg-zinc-900 dark:text-zinc-300'
-            }`}
-          >
-            {onboardingProgress.completed}/{onboardingProgress.total} done
-          </span>
+    <div className="bg-background text-foreground min-h-screen px-6 py-12">
+      <div className="mx-auto max-w-2xl">
+        <header className="mb-10">
+          <p className="text-primary text-xs font-semibold uppercase tracking-widest">
+            Anicite
+          </p>
+          <h1 className="mt-2 text-2xl font-semibold">Settings</h1>
+          <p className="text-muted-foreground mt-1 text-sm">
+            Manage your tracking preferences and data.
+          </p>
         </header>
 
-        <section className="card space-y-4">
-          <div className="flex items-center justify-between">
-            <h2 className="text-base font-semibold">Onboarding checklist</h2>
-          </div>
-          <label className="flex items-center gap-3">
-            <input
-              checked={settings.onboarding.consentConfirmed}
-              className="accent-brand-600 h-4 w-4"
-              onChange={() => updateOnboarding('consentConfirmed')}
-              type="checkbox"
-            />
-            <span>I have consent to track this device.</span>
-          </label>
-          <label className="flex items-center gap-3">
-            <input
-              checked={settings.onboarding.privacyReviewed}
-              className="accent-brand-600 h-4 w-4"
-              onChange={() => updateOnboarding('privacyReviewed')}
-              type="checkbox"
-            />
-            <span>I reviewed what data is stored locally.</span>
-          </label>
-          <label className="flex items-center gap-3">
-            <input
-              checked={settings.onboarding.pinExtension}
-              className="accent-brand-600 h-4 w-4"
-              onChange={() => updateOnboarding('pinExtension')}
-              type="checkbox"
-            />
-            <span>I know where to manage exclusions.</span>
-          </label>
-        </section>
+        <div className="space-y-8">
+          <section className="card">
+            <div className="flex items-start justify-between gap-4">
+              <div>
+                <h2 className="font-semibold">Tracking</h2>
+                <p className="text-muted-foreground mt-1 text-xs">
+                  Control whether Anicite collects browsing data.
+                </p>
+              </div>
+              <button
+                className="switch"
+                data-state={settings.enabled ? 'checked' : 'unchecked'}
+                onClick={handleToggleTracking}
+                type="button"
+                aria-label="Toggle tracking"
+              >
+                <span className="switch-thumb" />
+              </button>
+            </div>
+            {!settings.enabled && (
+              <p className="text-muted-foreground mt-3 text-xs">
+                Tracking is paused. No browsing data is being collected.
+              </p>
+            )}
+          </section>
 
-        <section className="card space-y-3">
-          <h2 className="text-base font-semibold">Data & privacy</h2>
-          <p className="text-sm text-zinc-700 dark:text-zinc-300">
-            Anicite records the host and path only. Query parameters and hash
-            fragments are never stored.
-          </p>
-          <button
-            className="button-ghost w-fit"
-            onClick={clearData}
-            type="button"
-          >
-            Clear local data
-          </button>
-        </section>
+          <section className="card">
+            <div>
+              <h2 className="font-semibold">Excluded Sites</h2>
+              <p className="text-muted-foreground mt-1 text-xs">
+                Sites in this list will not be tracked. Subdomains are included.
+              </p>
+            </div>
 
-        <section className="card space-y-4">
-          <h2 className="text-base font-semibold">Excluded sites</h2>
-          <div className="flex flex-wrap gap-2">
-            <input
-              className="w-full flex-1 rounded-xl border border-zinc-200 bg-white px-3 py-2 text-sm text-zinc-900 dark:border-zinc-800 dark:bg-zinc-950 dark:text-zinc-100"
-              onChange={(event) => setNewHost(event.target.value)}
-              placeholder="Add a domain (example.com)"
-              value={newHost}
-            />
-            <button className="button-primary" onClick={addHost} type="button">
-              Add
-            </button>
-          </div>
-          {settings.excludeHosts.length === 0 ? (
-            <p className="text-xs text-zinc-500 dark:text-zinc-400">
-              No exclusions yet.
-            </p>
-          ) : (
-            <div className="flex flex-wrap gap-2">
-              {settings.excludeHosts.map((host) => (
+            <div className="mt-4 flex gap-2">
+              <input
+                type="text"
+                className="input flex-1"
+                placeholder="example.com"
+                value={newHost}
+                onChange={(e) => setNewHost(e.target.value)}
+                onKeyDown={(e) => {
+                  if (e.key === 'Enter') {
+                    void handleAddExclusion();
+                  }
+                }}
+              />
+              <button
+                className="btn btn-secondary"
+                onClick={() => void handleAddExclusion()}
+                type="button"
+              >
+                Add
+              </button>
+            </div>
+
+            {settings.excludeHosts.length > 0 ? (
+              <div className="mt-4 space-y-2">
+                {settings.excludeHosts.map((host) => (
+                  <div
+                    key={host}
+                    className="border-border bg-muted/30 flex items-center justify-between rounded-md border px-3 py-2"
+                  >
+                    <span className="text-sm">{host}</span>
+                    <button
+                      className="text-destructive text-xs hover:underline"
+                      onClick={() => void handleRemoveExclusion(host)}
+                      type="button"
+                    >
+                      Remove
+                    </button>
+                  </div>
+                ))}
+              </div>
+            ) : (
+              <p className="text-muted-foreground mt-4 text-xs">
+                No excluded sites. All sites are being tracked.
+              </p>
+            )}
+          </section>
+
+          <section className="card">
+            <div>
+              <h2 className="font-semibold">Data</h2>
+              <p className="text-muted-foreground mt-1 text-xs">
+                Manage your locally stored browsing data.
+              </p>
+            </div>
+
+            <div className="mt-4">
+              {showClearConfirm ? (
+                <div className="space-y-3">
+                  <p className="text-destructive text-sm">
+                    Are you sure? This will permanently delete all stored
+                    browsing data.
+                  </p>
+                  <div className="flex gap-2">
+                    <button
+                      className="btn btn-destructive"
+                      onClick={() => void handleClearData()}
+                      disabled={isClearing}
+                      type="button"
+                    >
+                      {isClearing ? 'Clearing...' : 'Yes, clear all data'}
+                    </button>
+                    <button
+                      className="btn btn-ghost"
+                      onClick={() => setShowClearConfirm(false)}
+                      type="button"
+                    >
+                      Cancel
+                    </button>
+                  </div>
+                </div>
+              ) : (
                 <button
-                  className="chip"
-                  key={host}
-                  onClick={() => removeHost(host)}
+                  className="btn btn-outline"
+                  onClick={() => setShowClearConfirm(true)}
                   type="button"
                 >
-                  {host}
-                  <span className="text-brand-500 dark:text-brand-300 text-[10px]">
-                    Remove
-                  </span>
+                  Clear all data
                 </button>
-              ))}
+              )}
+
+              {clearSuccess && (
+                <p className="text-success mt-3 text-xs">
+                  All browsing data has been cleared.
+                </p>
+              )}
             </div>
-          )}
-        </section>
+          </section>
 
-        <div className="h-1" />
-      </div>
+          <section className="card">
+            <div>
+              <h2 className="font-semibold">Privacy</h2>
+              <p className="text-muted-foreground mt-1 text-xs">
+                What Anicite collects and stores.
+              </p>
+            </div>
 
-      <div className="fixed bottom-0 left-0 right-0 z-10 border-t border-zinc-200 bg-white/95 px-6 py-3 backdrop-blur dark:border-zinc-800 dark:bg-zinc-950/95">
-        <div className="mx-auto flex max-w-3xl items-center justify-end">
-          <button className="button-primary" onClick={closePage} type="button">
-            Done
+            <div className="text-muted-foreground mt-4 space-y-3 text-xs">
+              <div className="flex items-start gap-2">
+                <span className="bg-primary mt-1 h-2 w-2 shrink-0 rounded-full" />
+                <p>
+                  <strong className="text-foreground">URL data:</strong> Host
+                  and path only. Query strings and hashes are never saved.
+                </p>
+              </div>
+              <div className="flex items-start gap-2">
+                <span className="bg-primary mt-1 h-2 w-2 shrink-0 rounded-full" />
+                <p>
+                  <strong className="text-foreground">Activity metrics:</strong>{' '}
+                  Page visits, active time, clicks, and scroll depth.
+                </p>
+              </div>
+              <div className="flex items-start gap-2">
+                <span className="bg-primary mt-1 h-2 w-2 shrink-0 rounded-full" />
+                <p>
+                  <strong className="text-foreground">Storage:</strong> All data
+                  is stored locally in your browser. Nothing is sent to any
+                  server.
+                </p>
+              </div>
+            </div>
+          </section>
+
+          <div className="border-border border-t pt-6">
+            <button
+              className="text-primary text-sm hover:underline"
+              onClick={openOnboarding}
+              type="button"
+            >
+              Re-run onboarding wizard
+            </button>
+          </div>
+        </div>
+
+        <div className="mt-10 flex justify-end">
+          <button className="btn btn-primary" onClick={closePage} type="button">
+            Close settings
           </button>
         </div>
       </div>

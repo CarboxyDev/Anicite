@@ -16,7 +16,7 @@ const background: BackgroundDefinition = defineBackground(() => {
       await setSettings(DEFAULT_SETTINGS);
     }
 
-    chrome.runtime.openOptionsPage();
+    chrome.tabs.create({ url: chrome.runtime.getURL('onboarding.html') });
   });
 });
 

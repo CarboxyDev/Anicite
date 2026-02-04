@@ -39,8 +39,6 @@ export async function getSettings(): Promise<Settings> {
   return {
     ...DEFAULT_SETTINGS,
     ...stored,
-    enabled: true,
-    dataGranularity: DEFAULT_SETTINGS.dataGranularity,
     onboarding: {
       ...DEFAULT_SETTINGS.onboarding,
       ...(stored?.onboarding ?? {}),
@@ -59,8 +57,6 @@ export async function updateSettings(
   const next = {
     ...current,
     ...partial,
-    enabled: true,
-    dataGranularity: DEFAULT_SETTINGS.dataGranularity,
     onboarding: {
       ...current.onboarding,
       ...(partial.onboarding ?? {}),
