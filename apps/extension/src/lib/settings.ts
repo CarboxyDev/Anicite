@@ -25,7 +25,23 @@ export const DEFAULT_SETTINGS: Settings = {
 };
 
 export function normalizeHost(input: string): string {
-  return input.trim().toLowerCase();
+  let host = input.trim().toLowerCase();
+  host = host.replace(/^(https?:\/\/)?(www\.)?/, '');
+  host = host.replace(/\/.*$/, '');
+  return host;
+}
+
+export function isValidHost(input: string): boolean {
+  const host = normalizeHost(input);
+  if (!host || host.includes(' ')) {
+    return false;
+  }
+  if (host === 'localhost' || host.startsWith('localhost:')) {
+    return true;
+  }
+  const domainRegex =
+    /^[a-z0-9]([a-z0-9-]*[a-z0-9])?(\.[a-z0-9]([a-z0-9-]*[a-z0-9])?)+$/;
+  return domainRegex.test(host);
 }
 
 export function normalizeHostList(hosts: string[]): string[] {

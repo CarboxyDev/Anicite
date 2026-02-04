@@ -8,7 +8,12 @@ import {
   isHostExcluded,
   type Settings,
 } from '../../lib/settings';
-import { getSettings, getStore, type StatsTotals } from '../../lib/storage';
+import {
+  getSettings,
+  getStore,
+  type StatsTotals,
+  updateSettings,
+} from '../../lib/storage';
 import { getUrlParts } from '../../lib/url';
 
 const DEFAULT_STATS: StatsTotals = {
@@ -116,7 +121,11 @@ export function App() {
             </div>
             <button
               className="text-muted-foreground hover:text-foreground hover:bg-muted -mr-1 rounded-md p-1.5 transition-colors"
-              onClick={() => chrome.runtime.openOptionsPage()}
+              onClick={() =>
+                chrome.tabs.create({
+                  url: chrome.runtime.getURL('options.html'),
+                })
+              }
               title="Settings"
               type="button"
             >
@@ -139,13 +148,34 @@ export function App() {
         </div>
 
         <div className="card space-y-3">
-          <div>
-            <p className="text-muted-foreground text-xs">Active site</p>
-            <p className="font-semibold">
-              {currentHost ?? (isLoading ? 'Loading...' : 'No active tab')}
-            </p>
-            {isExcluded && (
-              <p className="text-destructive text-xs">Excluded from tracking</p>
+          <div className="flex items-start justify-between gap-2">
+            <div>
+              <p className="text-muted-foreground text-xs">Active site</p>
+              <p className="font-semibold">
+                {currentHost ?? (isLoading ? 'Loading...' : 'No active tab')}
+              </p>
+              {isExcluded && (
+                <p className="text-destructive text-xs">
+                  Excluded from tracking
+                </p>
+              )}
+            </div>
+            {currentHost && (
+              <button
+                className="text-muted-foreground hover:text-foreground shrink-0 text-xs hover:underline"
+                onClick={async () => {
+                  const newExcludeHosts = isExcluded
+                    ? settings.excludeHosts.filter((h) => h !== currentHost)
+                    : [...settings.excludeHosts, currentHost];
+                  const next = await updateSettings({
+                    excludeHosts: newExcludeHosts,
+                  });
+                  setSettings(next);
+                }}
+                type="button"
+              >
+                {isExcluded ? 'Include' : 'Exclude'}
+              </button>
             )}
           </div>
 

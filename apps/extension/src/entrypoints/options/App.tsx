@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react';
 
 import {
   DEFAULT_SETTINGS,
+  isValidHost,
   normalizeHost,
   type Settings,
 } from '../../lib/settings';
@@ -10,14 +11,17 @@ import { clearStore, getSettings, updateSettings } from '../../lib/storage';
 export function App() {
   const [settings, setSettings] = useState<Settings>(DEFAULT_SETTINGS);
   const [newHost, setNewHost] = useState('');
+  const [hostError, setHostError] = useState<string | null>(null);
   const [showClearConfirm, setShowClearConfirm] = useState(false);
   const [isClearing, setIsClearing] = useState(false);
   const [clearSuccess, setClearSuccess] = useState(false);
+  const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
     const init = async () => {
       const storedSettings = await getSettings();
       setSettings(storedSettings);
+      setIsLoading(false);
     };
     void init();
   }, []);
@@ -28,9 +32,21 @@ export function App() {
   };
 
   const handleAddExclusion = async () => {
+    setHostError(null);
     const host = normalizeHost(newHost);
-    if (!host || settings.excludeHosts.includes(host)) {
+
+    if (!host) {
       setNewHost('');
+      return;
+    }
+
+    if (!isValidHost(host)) {
+      setHostError('Enter a valid domain (e.g., example.com)');
+      return;
+    }
+
+    if (settings.excludeHosts.includes(host)) {
+      setHostError('This site is already excluded');
       return;
     }
 
@@ -60,22 +76,28 @@ export function App() {
     }
   };
 
-  const openOnboarding = () => {
-    chrome.tabs.create({ url: chrome.runtime.getURL('onboarding.html') });
-  };
-
-  const closePage = async () => {
-    try {
-      const tab = await chrome.tabs.getCurrent();
-      if (tab?.id) {
-        await chrome.tabs.remove(tab.id);
-        return;
-      }
-    } catch {
-      // Ignore
-    }
-    window.close();
-  };
+  if (isLoading) {
+    return (
+      <div className="bg-background text-foreground min-h-screen px-6 py-12">
+        <div className="mx-auto max-w-2xl">
+          <header className="mb-10">
+            <div className="bg-muted h-3 w-16 animate-pulse rounded" />
+            <div className="bg-muted mt-3 h-7 w-32 animate-pulse rounded" />
+            <div className="bg-muted mt-2 h-4 w-64 animate-pulse rounded" />
+          </header>
+          <div className="space-y-8">
+            {[1, 2, 3, 4].map((i) => (
+              <div key={i} className="card">
+                <div className="bg-muted h-5 w-24 animate-pulse rounded" />
+                <div className="bg-muted mt-2 h-3 w-48 animate-pulse rounded" />
+                <div className="bg-muted mt-4 h-10 w-full animate-pulse rounded" />
+              </div>
+            ))}
+          </div>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="bg-background text-foreground min-h-screen px-6 py-12">
@@ -124,26 +146,34 @@ export function App() {
               </p>
             </div>
 
-            <div className="mt-4 flex gap-2">
-              <input
-                type="text"
-                className="input flex-1"
-                placeholder="example.com"
-                value={newHost}
-                onChange={(e) => setNewHost(e.target.value)}
-                onKeyDown={(e) => {
-                  if (e.key === 'Enter') {
-                    void handleAddExclusion();
-                  }
-                }}
-              />
-              <button
-                className="btn btn-secondary"
-                onClick={() => void handleAddExclusion()}
-                type="button"
-              >
-                Add
-              </button>
+            <div className="mt-4 space-y-2">
+              <div className="flex gap-2">
+                <input
+                  type="text"
+                  className={`input flex-1 ${hostError ? 'border-destructive' : ''}`}
+                  placeholder="example.com"
+                  value={newHost}
+                  onChange={(e) => {
+                    setNewHost(e.target.value);
+                    setHostError(null);
+                  }}
+                  onKeyDown={(e) => {
+                    if (e.key === 'Enter') {
+                      void handleAddExclusion();
+                    }
+                  }}
+                />
+                <button
+                  className="btn btn-secondary"
+                  onClick={() => void handleAddExclusion()}
+                  type="button"
+                >
+                  Add
+                </button>
+              </div>
+              {hostError && (
+                <p className="text-destructive text-xs">{hostError}</p>
+              )}
             </div>
 
             {settings.excludeHosts.length > 0 ? (
@@ -255,22 +285,6 @@ export function App() {
               </div>
             </div>
           </section>
-
-          <div className="border-border border-t pt-6">
-            <button
-              className="text-primary text-sm hover:underline"
-              onClick={openOnboarding}
-              type="button"
-            >
-              Re-run onboarding wizard
-            </button>
-          </div>
-        </div>
-
-        <div className="mt-10 flex justify-end">
-          <button className="btn btn-primary" onClick={closePage} type="button">
-            Close settings
-          </button>
         </div>
       </div>
     </div>

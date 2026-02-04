@@ -26,9 +26,5 @@ export default defineConfig({
       48: 'icons/icon-48.png',
       128: 'icons/icon-128.png',
     },
-    options_ui: {
-      page: 'options/index.html',
-      open_in_tab: true,
-    },
   },
 });
