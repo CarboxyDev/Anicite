@@ -1,5 +1,6 @@
 import {
   ArrowLeftRight,
+  BarChart3,
   Clock,
   Eye,
   Globe,
@@ -140,18 +141,32 @@ export function App() {
               </p>
               <h1 className="text-lg font-semibold">Today</h1>
             </div>
-            <button
-              className="text-muted-foreground hover:text-foreground hover:bg-muted -mr-1 rounded-md p-1.5 transition-colors"
-              onClick={() =>
-                chrome.tabs.create({
-                  url: chrome.runtime.getURL('options.html'),
-                })
-              }
-              title="Settings"
-              type="button"
-            >
-              <SettingsIcon className="h-4 w-4" />
-            </button>
+            <div className="-mr-1 flex items-center gap-0.5">
+              <button
+                className="text-muted-foreground hover:text-foreground hover:bg-muted rounded-md p-1.5 transition-colors"
+                onClick={() =>
+                  chrome.tabs.create({
+                    url: chrome.runtime.getURL('insights.html'),
+                  })
+                }
+                title="Insights"
+                type="button"
+              >
+                <BarChart3 className="h-4 w-4" />
+              </button>
+              <button
+                className="text-muted-foreground hover:text-foreground hover:bg-muted rounded-md p-1.5 transition-colors"
+                onClick={() =>
+                  chrome.tabs.create({
+                    url: chrome.runtime.getURL('options.html'),
+                  })
+                }
+                title="Settings"
+                type="button"
+              >
+                <SettingsIcon className="h-4 w-4" />
+              </button>
+            </div>
           </div>
 
           <div className="grid grid-cols-2 gap-x-3 gap-y-2.5 text-xs">

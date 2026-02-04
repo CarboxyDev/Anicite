@@ -209,6 +209,20 @@ export function App() {
               </p>
             </div>
 
+            <div className="mt-4 flex items-center justify-between">
+              <button
+                className="text-primary text-sm hover:underline"
+                onClick={() =>
+                  chrome.tabs.create({
+                    url: chrome.runtime.getURL('insights.html'),
+                  })
+                }
+                type="button"
+              >
+                View Insights →
+              </button>
+            </div>
+
             <div className="mt-4">
               {showClearConfirm ? (
                 <div className="space-y-3">
