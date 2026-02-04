@@ -13,7 +13,7 @@ function emptyTotals() {
     sessions: 0,
     activeMs: 0,
     clicks: 0,
-    scrollMax: 0,
+    scrollDistance: 0,
     tabSwitches: 0,
   };
 }
@@ -99,12 +99,9 @@ class StatsWriteQueue {
           day.clicks += clicks;
           day.tabSwitches += tabSwitches;
 
-          if (typeof delta.scrollMax === 'number') {
-            page.totals.scrollMax = Math.max(
-              page.totals.scrollMax,
-              delta.scrollMax
-            );
-            day.scrollMax = Math.max(day.scrollMax, delta.scrollMax);
+          if (typeof delta.scrollDistance === 'number') {
+            page.totals.scrollDistance += delta.scrollDistance;
+            day.scrollDistance += delta.scrollDistance;
           }
 
           page.lastSeenAt = now;

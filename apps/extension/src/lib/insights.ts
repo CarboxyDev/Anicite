@@ -41,7 +41,7 @@ function emptyTotals(): StatsTotals {
     sessions: 0,
     activeMs: 0,
     clicks: 0,
-    scrollMax: 0,
+    scrollDistance: 0,
     tabSwitches: 0,
   };
 }
@@ -77,7 +77,7 @@ function addStats(target: StatsTotals, source: StatsTotals): void {
   target.activeMs += source.activeMs;
   target.clicks += source.clicks;
   target.tabSwitches += source.tabSwitches;
-  target.scrollMax = Math.max(target.scrollMax, source.scrollMax);
+  target.scrollDistance += source.scrollDistance;
 }
 
 export function aggregateByPeriod(

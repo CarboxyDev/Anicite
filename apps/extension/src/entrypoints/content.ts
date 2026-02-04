@@ -52,13 +52,14 @@ const contentScript: ContentScriptDefinition = defineContentScript({
       (trackingMode === 'visible' || windowFocused);
     let lastActiveAt = shouldTrackNow ? Date.now() : null;
     let clicks = 0;
-    let scrollMax = 0;
+    let scrollDistance = 0;
+    let lastScrollY = window.scrollY;
     let tabSwitches = 0;
 
     let lastFlushedActiveMs = 0;
     let lastFlushedClicks = 0;
     let lastFlushedTabSwitches = 0;
-    let lastFlushedScrollMax = 0;
+    let lastFlushedScrollDistance = 0;
 
     const stop = () => {
       if (stopped) return;
@@ -66,18 +67,13 @@ const contentScript: ContentScriptDefinition = defineContentScript({
       if (intervalId !== undefined) window.clearInterval(intervalId);
     };
 
-    const updateScrollMax = () => {
-      const scrollHeight =
-        document.documentElement.scrollHeight - window.innerHeight;
-      if (scrollHeight <= 0) {
-        scrollMax = Math.max(scrollMax, 1);
-        return;
+    const updateScrollDistance = () => {
+      const currentScrollY = window.scrollY;
+      const delta = Math.abs(currentScrollY - lastScrollY);
+      if (delta > 0 && window.innerHeight > 0) {
+        scrollDistance += delta / window.innerHeight;
       }
-      const ratio = window.scrollY / scrollHeight;
-      const clamped = Number.isFinite(ratio)
-        ? Math.min(Math.max(ratio, 0), 1)
-        : 0;
-      scrollMax = Math.max(scrollMax, clamped);
+      lastScrollY = currentScrollY;
     };
 
     const flush = async (isUnload = false) => {
@@ -112,14 +108,16 @@ const contentScript: ContentScriptDefinition = defineContentScript({
         0,
         tabSwitches - lastFlushedTabSwitches
       );
-      const deltaScrollMax =
-        scrollMax > lastFlushedScrollMax ? scrollMax : undefined;
+      const deltaScrollDistance = Math.max(
+        0,
+        scrollDistance - lastFlushedScrollDistance
+      );
 
       if (
         deltaActiveMs === 0 &&
         deltaClicks === 0 &&
         deltaTabSwitches === 0 &&
-        deltaScrollMax === undefined
+        deltaScrollDistance === 0
       ) {
         flushInProgress = false;
         return;
@@ -128,14 +126,12 @@ const contentScript: ContentScriptDefinition = defineContentScript({
       const prevFlushedActiveMs = lastFlushedActiveMs;
       const prevFlushedClicks = lastFlushedClicks;
       const prevFlushedTabSwitches = lastFlushedTabSwitches;
-      const prevFlushedScrollMax = lastFlushedScrollMax;
+      const prevFlushedScrollDistance = lastFlushedScrollDistance;
 
       lastFlushedActiveMs = totalActiveMs;
       lastFlushedClicks = clicks;
       lastFlushedTabSwitches = tabSwitches;
-      if (deltaScrollMax !== undefined) {
-        lastFlushedScrollMax = scrollMax;
-      }
+      lastFlushedScrollDistance = scrollDistance;
 
       try {
         const response = await sendUpdateStats({
@@ -147,7 +143,7 @@ const contentScript: ContentScriptDefinition = defineContentScript({
           delta: {
             activeMs: deltaActiveMs,
             clicks: deltaClicks,
-            scrollMax: deltaScrollMax,
+            scrollDistance: deltaScrollDistance,
             tabSwitches: deltaTabSwitches,
           },
         });
@@ -156,7 +152,7 @@ const contentScript: ContentScriptDefinition = defineContentScript({
           lastFlushedActiveMs = prevFlushedActiveMs;
           lastFlushedClicks = prevFlushedClicks;
           lastFlushedTabSwitches = prevFlushedTabSwitches;
-          lastFlushedScrollMax = prevFlushedScrollMax;
+          lastFlushedScrollDistance = prevFlushedScrollDistance;
 
           if (
             response.error?.includes('Extension context invalidated') ||
@@ -169,7 +165,7 @@ const contentScript: ContentScriptDefinition = defineContentScript({
         lastFlushedActiveMs = prevFlushedActiveMs;
         lastFlushedClicks = prevFlushedClicks;
         lastFlushedTabSwitches = prevFlushedTabSwitches;
-        lastFlushedScrollMax = prevFlushedScrollMax;
+        lastFlushedScrollDistance = prevFlushedScrollDistance;
         stop();
       } finally {
         flushInProgress = false;
@@ -240,7 +236,7 @@ const contentScript: ContentScriptDefinition = defineContentScript({
       if (!stopped) clicks += 1;
     });
 
-    window.addEventListener('scroll', updateScrollMax, { passive: true });
+    window.addEventListener('scroll', updateScrollDistance, { passive: true });
 
     intervalId = window.setInterval(() => {
       void flush();
@@ -307,7 +303,7 @@ const contentScript: ContentScriptDefinition = defineContentScript({
       return;
     }
 
-    updateScrollMax();
+    updateScrollDistance();
 
     window.addEventListener('beforeunload', () => {
       if (lastActiveAt) {

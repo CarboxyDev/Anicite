@@ -4,6 +4,7 @@ import {
   Clock,
   Eye,
   Globe,
+  Info,
   MousePointerClick,
   MoveVertical,
   Settings as SettingsIcon,
@@ -34,7 +35,7 @@ const DEFAULT_STATS: StatsTotals = {
   sessions: 0,
   activeMs: 0,
   clicks: 0,
-  scrollMax: 0,
+  scrollDistance: 0,
   tabSwitches: 0,
 };
 
@@ -54,11 +55,48 @@ function computeTodayTotals(store: Store): TodayTotals {
     totals.activeMs += day.activeMs;
     totals.clicks += day.clicks;
     totals.tabSwitches += day.tabSwitches;
-    totals.scrollMax = Math.max(totals.scrollMax, day.scrollMax);
+    totals.scrollDistance += day.scrollDistance ?? 0;
     totals.sitesCount += 1;
   }
 
   return totals;
+}
+
+function formatScrollIntensity(
+  scrollDistance: number | undefined,
+  activeMs: number
+): string {
+  const distance = scrollDistance ?? 0;
+  const activeMinutes = activeMs / 60000;
+  if (activeMinutes < 0.1) return '–';
+  const intensity = distance / activeMinutes;
+  if (!Number.isFinite(intensity)) return '–';
+  return intensity.toFixed(1);
+}
+
+function ScrollIntensityTooltip() {
+  return (
+    <div className="group relative inline-flex">
+      <Info className="group-hover:text-foreground h-2.5 w-2.5 cursor-help transition-colors" />
+      <div className="pointer-events-none absolute bottom-full left-1/2 z-50 mb-2 -translate-x-1/2 opacity-0 transition-opacity group-hover:pointer-events-auto group-hover:opacity-100">
+        <div className="bg-foreground text-background w-max max-w-[200px] rounded-md px-3 py-2 text-xs shadow-lg">
+          <p className="mb-1.5 font-medium">Scroll intensity</p>
+          <div className="space-y-0.5 text-[11px] opacity-90">
+            <p>
+              <span className="text-green-400">&lt; 1</span> Reading/watching
+            </p>
+            <p>
+              <span className="text-yellow-400">1-5</span> Normal browsing
+            </p>
+            <p>
+              <span className="text-red-400">5+</span> Doom scrolling
+            </p>
+          </div>
+        </div>
+        <div className="bg-foreground mx-auto h-2 w-2 -translate-y-1 rotate-45 rounded-sm" />
+      </div>
+    </div>
+  );
 }
 
 export function App() {
@@ -332,9 +370,18 @@ export function App() {
                   <MoveVertical className="h-3.5 w-3.5" />
                 </div>
                 <div>
-                  <p className="text-muted-foreground text-[11px]">Scrolled</p>
+                  <p className="text-muted-foreground flex items-center gap-1 text-[11px]">
+                    Scroll
+                    <ScrollIntensityTooltip />
+                  </p>
                   <p className="font-semibold">
-                    {Math.round(stats.scrollMax * 100)}%
+                    {formatScrollIntensity(
+                      stats.scrollDistance,
+                      stats.activeMs
+                    )}
+                    <span className="text-muted-foreground ml-0.5 text-[10px] font-normal">
+                      /min
+                    </span>
                   </p>
                 </div>
               </div>

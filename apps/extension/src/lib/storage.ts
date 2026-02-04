@@ -6,7 +6,7 @@ export type StatsTotals = {
   sessions: number;
   activeMs: number;
   clicks: number;
-  scrollMax: number;
+  scrollDistance: number;
   tabSwitches: number;
 };
 
@@ -32,7 +32,7 @@ function emptyTotals(): StatsTotals {
     sessions: 0,
     activeMs: 0,
     clicks: 0,
-    scrollMax: 0,
+    scrollDistance: 0,
     tabSwitches: 0,
   };
 }
@@ -93,7 +93,7 @@ export type StatsDelta = {
   sessions?: number;
   activeMs?: number;
   clicks?: number;
-  scrollMax?: number;
+  scrollDistance?: number;
   tabSwitches?: number;
 };
 
@@ -148,9 +148,9 @@ export async function updatePageStats({
   day.clicks += clicks;
   day.tabSwitches += tabSwitches;
 
-  if (typeof delta.scrollMax === 'number') {
-    page.totals.scrollMax = Math.max(page.totals.scrollMax, delta.scrollMax);
-    day.scrollMax = Math.max(day.scrollMax, delta.scrollMax);
+  if (typeof delta.scrollDistance === 'number') {
+    page.totals.scrollDistance += delta.scrollDistance;
+    day.scrollDistance += delta.scrollDistance;
   }
 
   page.lastSeenAt = now;
