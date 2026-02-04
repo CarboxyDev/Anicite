@@ -3,8 +3,9 @@ import { defineContentScript } from 'wxt/sandbox';
 
 import { SETTINGS_KEY } from '../lib/constants';
 import { getLocalDateKey } from '../lib/date';
+import { sendUpdateStats } from '../lib/messaging';
 import { isHostExcluded } from '../lib/settings';
-import { getSettings, getStore, updatePageStats } from '../lib/storage';
+import { getSettings, getStore } from '../lib/storage';
 import { getUrlParts } from '../lib/url';
 
 const FLUSH_INTERVAL_MS = 5000;
@@ -40,6 +41,7 @@ const contentScript: ContentScriptDefinition = defineContentScript({
 
     let stopped = false;
     let intervalId: number | undefined;
+    let flushInProgress = false;
 
     let activeMs = 0;
     let lastActiveAt =
@@ -51,6 +53,7 @@ const contentScript: ContentScriptDefinition = defineContentScript({
     let lastFlushedActiveMs = 0;
     let lastFlushedClicks = 0;
     let lastFlushedTabSwitches = 0;
+    let lastFlushedScrollMax = 0;
 
     const stop = () => {
       if (stopped) return;
@@ -72,13 +75,19 @@ const contentScript: ContentScriptDefinition = defineContentScript({
       scrollMax = Math.max(scrollMax, clamped);
     };
 
-    const flush = async () => {
+    const flush = async (isUnload = false) => {
       if (stopped || !isContextValid()) {
         stop();
         return;
       }
 
-      if (!enabled || isHostExcluded(urlParts.host, excludeHosts)) return;
+      if (flushInProgress && !isUnload) return;
+      flushInProgress = true;
+
+      if (!enabled || isHostExcluded(urlParts.host, excludeHosts)) {
+        flushInProgress = false;
+        return;
+      }
 
       const now = Date.now();
       const totalActiveMs = lastActiveAt
@@ -90,22 +99,33 @@ const contentScript: ContentScriptDefinition = defineContentScript({
         0,
         tabSwitches - lastFlushedTabSwitches
       );
+      const deltaScrollMax =
+        scrollMax > lastFlushedScrollMax ? scrollMax : undefined;
 
       if (
         deltaActiveMs === 0 &&
         deltaClicks === 0 &&
         deltaTabSwitches === 0 &&
-        scrollMax === 0
+        deltaScrollMax === undefined
       ) {
+        flushInProgress = false;
         return;
       }
+
+      const prevFlushedActiveMs = lastFlushedActiveMs;
+      const prevFlushedClicks = lastFlushedClicks;
+      const prevFlushedTabSwitches = lastFlushedTabSwitches;
+      const prevFlushedScrollMax = lastFlushedScrollMax;
 
       lastFlushedActiveMs = totalActiveMs;
       lastFlushedClicks = clicks;
       lastFlushedTabSwitches = tabSwitches;
+      if (deltaScrollMax !== undefined) {
+        lastFlushedScrollMax = scrollMax;
+      }
 
       try {
-        await updatePageStats({
+        const response = await sendUpdateStats({
           key: urlParts.key,
           url: urlParts.url,
           host: urlParts.host,
@@ -114,26 +134,65 @@ const contentScript: ContentScriptDefinition = defineContentScript({
           delta: {
             activeMs: deltaActiveMs,
             clicks: deltaClicks,
-            scrollMax,
+            scrollMax: deltaScrollMax,
             tabSwitches: deltaTabSwitches,
           },
         });
+
+        if (!response.success) {
+          lastFlushedActiveMs = prevFlushedActiveMs;
+          lastFlushedClicks = prevFlushedClicks;
+          lastFlushedTabSwitches = prevFlushedTabSwitches;
+          lastFlushedScrollMax = prevFlushedScrollMax;
+
+          if (
+            response.error?.includes('Extension context invalidated') ||
+            response.error?.includes('Receiving end does not exist')
+          ) {
+            stop();
+          }
+        }
       } catch {
+        lastFlushedActiveMs = prevFlushedActiveMs;
+        lastFlushedClicks = prevFlushedClicks;
+        lastFlushedTabSwitches = prevFlushedTabSwitches;
+        lastFlushedScrollMax = prevFlushedScrollMax;
         stop();
+      } finally {
+        flushInProgress = false;
       }
     };
 
     const handleVisibilityChange = () => {
       if (stopped) return;
+      const now = Date.now();
+
       if (document.visibilityState === 'hidden') {
         if (lastActiveAt) {
-          activeMs += Date.now() - lastActiveAt;
+          activeMs += now - lastActiveAt;
           lastActiveAt = null;
         }
         tabSwitches += 1;
         void flush();
-      } else if (!lastActiveAt) {
+      } else {
+        if (!lastActiveAt) {
+          lastActiveAt = now;
+        }
+      }
+    };
+
+    const handleFocus = () => {
+      if (stopped) return;
+      if (!lastActiveAt && document.visibilityState === 'visible') {
         lastActiveAt = Date.now();
+      }
+    };
+
+    const handleBlur = () => {
+      if (stopped) return;
+      if (lastActiveAt) {
+        activeMs += Date.now() - lastActiveAt;
+        lastActiveAt = null;
       }
     };
 
@@ -149,16 +208,21 @@ const contentScript: ContentScriptDefinition = defineContentScript({
     };
 
     document.addEventListener('visibilitychange', handleVisibilityChange);
+    window.addEventListener('focus', handleFocus);
+    window.addEventListener('blur', handleBlur);
+
     window.addEventListener('pagehide', () => {
       if (lastActiveAt) {
         activeMs += Date.now() - lastActiveAt;
         lastActiveAt = null;
       }
-      void flush();
+      void flush(true);
     });
+
     document.addEventListener('click', () => {
       if (!stopped) clicks += 1;
     });
+
     window.addEventListener('scroll', updateScrollMax, { passive: true });
 
     intervalId = window.setInterval(() => {
@@ -186,7 +250,7 @@ const contentScript: ContentScriptDefinition = defineContentScript({
       !existingPage || now - existingPage.lastSeenAt > SESSION_GAP_MS;
 
     try {
-      await updatePageStats({
+      const response = await sendUpdateStats({
         key: urlParts.key,
         url: urlParts.url,
         host: urlParts.host,
@@ -197,6 +261,11 @@ const contentScript: ContentScriptDefinition = defineContentScript({
           sessions: isNewSession ? 1 : 0,
         },
       });
+
+      if (!response.success) {
+        stop();
+        return;
+      }
     } catch {
       stop();
       return;
@@ -204,7 +273,14 @@ const contentScript: ContentScriptDefinition = defineContentScript({
 
     updateScrollMax();
 
-    window.addEventListener('beforeunload', stop);
+    window.addEventListener('beforeunload', () => {
+      if (lastActiveAt) {
+        activeMs += Date.now() - lastActiveAt;
+        lastActiveAt = null;
+      }
+      void flush(true);
+      stop();
+    });
   },
 });
 

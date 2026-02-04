@@ -16,7 +16,7 @@ export type Settings = {
 export const DEFAULT_SETTINGS: Settings = {
   enabled: true,
   excludeHosts: [],
-  dataGranularity: 'path',
+  dataGranularity: 'host',
   onboarding: {
     consentConfirmed: false,
     privacyReviewed: false,

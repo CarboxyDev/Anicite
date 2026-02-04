@@ -5,15 +5,16 @@ import {
   Settings as SettingsIcon,
   SwatchBook,
 } from 'lucide-react';
-import { useEffect, useState, useTransition } from 'react';
+import { useCallback, useEffect, useRef, useState, useTransition } from 'react';
 
+import { STORAGE_KEY } from '../../lib/constants';
 import { formatDuration } from '../../lib/format';
 import {
   aggregateByPeriod,
   type AggregatedStats,
   type Period,
 } from '../../lib/insights';
-import { getStore } from '../../lib/storage';
+import { getStore, type Store } from '../../lib/storage';
 
 const PERIODS: { value: Period; label: string }[] = [
   { value: 'today', label: 'Today' },
@@ -36,17 +37,40 @@ export function App() {
   const [data, setData] = useState<AggregatedStats | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [isPending, startTransition] = useTransition();
+  const periodRef = useRef<Period>('today');
+
+  const updateFromStore = useCallback((store: Store) => {
+    const aggregated = aggregateByPeriod(store, periodRef.current);
+    setData(aggregated);
+  }, []);
 
   useEffect(() => {
+    periodRef.current = period;
     const loadData = async () => {
       setIsLoading(true);
       const store = await getStore();
-      const aggregated = aggregateByPeriod(store, period);
-      setData(aggregated);
+      updateFromStore(store);
       setIsLoading(false);
     };
     void loadData();
-  }, [period]);
+  }, [period, updateFromStore]);
+
+  useEffect(() => {
+    const handleStorageChange = (
+      changes: { [key: string]: chrome.storage.StorageChange },
+      areaName: string
+    ) => {
+      if (areaName !== 'local') return;
+      if (changes[STORAGE_KEY]?.newValue) {
+        updateFromStore(changes[STORAGE_KEY].newValue as Store);
+      }
+    };
+
+    chrome.storage.onChanged.addListener(handleStorageChange);
+    return () => {
+      chrome.storage.onChanged.removeListener(handleStorageChange);
+    };
+  }, [updateFromStore]);
 
   const handlePeriodChange = (newPeriod: Period) => {
     startTransition(() => {

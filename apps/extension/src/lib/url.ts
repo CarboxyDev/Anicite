@@ -7,9 +7,17 @@ export type UrlParts = {
   key: string;
 };
 
+function normalizeHostname(hostname: string): string {
+  let h = hostname.toLowerCase();
+  if (h.startsWith('www.')) {
+    h = h.slice(4);
+  }
+  return h;
+}
+
 export function getHostname(rawUrl: string): string | null {
   try {
-    return new URL(rawUrl).hostname;
+    return normalizeHostname(new URL(rawUrl).hostname);
   } catch {
     return null;
   }
@@ -29,7 +37,7 @@ export function getUrlParts(
   granularity: DataGranularity
 ): UrlParts {
   const parsed = new URL(rawUrl);
-  const host = parsed.hostname.toLowerCase();
+  const host = normalizeHostname(parsed.hostname);
   const path = sanitizePath(parsed.pathname);
 
   if (granularity === 'host') {

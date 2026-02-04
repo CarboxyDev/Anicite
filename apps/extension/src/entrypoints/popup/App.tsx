@@ -9,8 +9,9 @@ import {
   Settings as SettingsIcon,
   SwatchBook,
 } from 'lucide-react';
-import { useEffect, useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 
+import { SETTINGS_KEY, STORAGE_KEY } from '../../lib/constants';
 import { getLocalDateKey } from '../../lib/date';
 import { formatDuration } from '../../lib/format';
 import {
@@ -22,6 +23,7 @@ import {
   getSettings,
   getStore,
   type StatsTotals,
+  type Store,
   updateSettings,
 } from '../../lib/storage';
 import { getUrlParts } from '../../lib/url';
@@ -39,6 +41,25 @@ interface TodayTotals extends StatsTotals {
   sitesCount: number;
 }
 
+function computeTodayTotals(store: Store): TodayTotals {
+  const dateKey = getLocalDateKey();
+  const totals: TodayTotals = { ...DEFAULT_STATS, sitesCount: 0 };
+
+  for (const entry of Object.values(store.pages)) {
+    const day = entry.byDate[dateKey];
+    if (!day) continue;
+    totals.visits += day.visits;
+    totals.sessions += day.sessions;
+    totals.activeMs += day.activeMs;
+    totals.clicks += day.clicks;
+    totals.tabSwitches += day.tabSwitches;
+    totals.scrollMax = Math.max(totals.scrollMax, day.scrollMax);
+    totals.sitesCount += 1;
+  }
+
+  return totals;
+}
+
 export function App() {
   const [settings, setSettings] = useState<Settings>(DEFAULT_SETTINGS);
   const [currentHost, setCurrentHost] = useState<string | null>(null);
@@ -49,6 +70,7 @@ export function App() {
     sitesCount: 0,
   });
   const [isLoading, setIsLoading] = useState(true);
+  const currentKeyRef = useRef<string | null>(null);
 
   const isExcluded = useMemo(() => {
     if (!currentHost) {
@@ -61,6 +83,18 @@ export function App() {
     return Object.values(settings.onboarding).every(Boolean);
   }, [settings.onboarding]);
 
+  const updateFromStore = useCallback((store: Store) => {
+    const dateKey = getLocalDateKey();
+    const key = currentKeyRef.current;
+
+    if (key) {
+      const page = store.pages[key];
+      setStats(page?.byDate[dateKey] ?? DEFAULT_STATS);
+    }
+
+    setTodayTotals(computeTodayTotals(store));
+  }, []);
+
   useEffect(() => {
     const init = async () => {
       const storedSettings = await getSettings();
@@ -70,38 +104,44 @@ export function App() {
         active: true,
         currentWindow: true,
       });
+
       if (tab?.url) {
         const urlParts = getUrlParts(tab.url, storedSettings.dataGranularity);
         setCurrentHost(urlParts.host);
         setCurrentKey(urlParts.key);
+        currentKeyRef.current = urlParts.key;
 
         const store = await getStore();
-        const page = store.pages[urlParts.key];
-        const dateKey = getLocalDateKey();
-        setStats(page?.byDate[dateKey] ?? DEFAULT_STATS);
-
-        const totals: TodayTotals = { ...DEFAULT_STATS, sitesCount: 0 };
-        for (const entry of Object.values(store.pages)) {
-          const day = entry.byDate[dateKey];
-          if (!day) {
-            continue;
-          }
-          totals.visits += day.visits;
-          totals.sessions += day.sessions;
-          totals.activeMs += day.activeMs;
-          totals.clicks += day.clicks;
-          totals.tabSwitches += day.tabSwitches;
-          totals.scrollMax = Math.max(totals.scrollMax, day.scrollMax);
-          totals.sitesCount += 1;
-        }
-        setTodayTotals(totals);
+        updateFromStore(store);
       }
 
       setIsLoading(false);
     };
 
     void init();
-  }, []);
+  }, [updateFromStore]);
+
+  useEffect(() => {
+    const handleStorageChange = (
+      changes: { [key: string]: chrome.storage.StorageChange },
+      areaName: string
+    ) => {
+      if (areaName !== 'local') return;
+
+      if (changes[SETTINGS_KEY]?.newValue) {
+        setSettings(changes[SETTINGS_KEY].newValue as Settings);
+      }
+
+      if (changes[STORAGE_KEY]?.newValue) {
+        updateFromStore(changes[STORAGE_KEY].newValue as Store);
+      }
+    };
+
+    chrome.storage.onChanged.addListener(handleStorageChange);
+    return () => {
+      chrome.storage.onChanged.removeListener(handleStorageChange);
+    };
+  }, [updateFromStore]);
 
   if (!isOnboardingComplete) {
     return (
