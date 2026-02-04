@@ -90,6 +90,11 @@ const contentScript: ContentScriptDefinition = defineContentScript({
       }
 
       const now = Date.now();
+
+      if (document.visibilityState === 'visible' && !lastActiveAt) {
+        lastActiveAt = now;
+      }
+
       const totalActiveMs = lastActiveAt
         ? activeMs + (now - lastActiveAt)
         : activeMs;
