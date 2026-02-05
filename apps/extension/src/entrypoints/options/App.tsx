@@ -360,10 +360,19 @@ export function App() {
         </header>
 
         <div className="space-y-8">
-          <section className="card">
+          <section
+            className={`card transition-colors ${!settings.enabled ? 'border-amber-500/50 bg-amber-500/5' : ''}`}
+          >
             <div className="flex items-start justify-between gap-4">
               <div>
-                <h2 className="font-semibold">Tracking</h2>
+                <div className="flex items-center gap-2">
+                  <h2 className="font-semibold">Tracking</h2>
+                  {!settings.enabled && (
+                    <span className="rounded-full bg-amber-500/20 px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wider text-amber-600 dark:text-amber-400">
+                      Paused
+                    </span>
+                  )}
+                </div>
                 <p className="text-muted-foreground mt-1 text-xs">
                   Control whether Anicite collects browsing data.
                 </p>
@@ -379,9 +388,12 @@ export function App() {
               </button>
             </div>
             {!settings.enabled && (
-              <p className="text-muted-foreground mt-3 text-xs">
-                Tracking is paused. No browsing data is being collected.
-              </p>
+              <div className="mt-3 flex items-center gap-2 rounded-md bg-amber-500/10 px-3 py-2">
+                <div className="h-2 w-2 shrink-0 rounded-full bg-amber-500" />
+                <p className="text-xs font-medium text-amber-600 dark:text-amber-400">
+                  Tracking is paused. No browsing data is being collected.
+                </p>
+              </div>
             )}
           </section>
 

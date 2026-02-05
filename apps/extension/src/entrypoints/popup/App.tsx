@@ -265,6 +265,27 @@ export function App() {
   return (
     <div className="bg-background text-foreground w-[320px] p-4 text-sm">
       <div className="space-y-3">
+        {!settings.enabled && (
+          <div className="flex items-center justify-between gap-3 rounded-lg border border-amber-500/30 bg-amber-500/10 px-3 py-2.5">
+            <div className="flex items-center gap-2">
+              <div className="h-2 w-2 rounded-full bg-amber-500" />
+              <p className="text-sm font-medium text-amber-600 dark:text-amber-400">
+                Tracking paused
+              </p>
+            </div>
+            <button
+              className="text-xs font-medium text-amber-600 hover:underline dark:text-amber-400"
+              onClick={() =>
+                chrome.tabs.create({
+                  url: chrome.runtime.getURL('options.html'),
+                })
+              }
+              type="button"
+            >
+              Resume
+            </button>
+          </div>
+        )}
         <div className="card space-y-4">
           <div className="flex items-center justify-between gap-3">
             <div>
