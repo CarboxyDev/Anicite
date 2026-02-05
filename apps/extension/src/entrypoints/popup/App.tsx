@@ -62,38 +62,56 @@ function computeTodayTotals(store: Store): TodayTotals {
   return totals;
 }
 
-function formatScrollIntensity(
+function getScrollIntensity(
   scrollDistance: number | undefined,
   activeMs: number
-): string {
+): number | null {
   const distance = scrollDistance ?? 0;
   const activeMinutes = activeMs / 60000;
-  if (activeMinutes < 0.1) return '–';
+  if (activeMinutes < 0.1) return null;
   const intensity = distance / activeMinutes;
-  if (!Number.isFinite(intensity)) return '–';
+  if (!Number.isFinite(intensity)) return null;
+  return intensity;
+}
+
+function formatScrollIntensity(intensity: number | null): string {
+  if (intensity === null) return '–';
   return intensity.toFixed(1);
+}
+
+function getScrollIntensityColor(intensity: number | null): string {
+  if (intensity === null) return '';
+  if (intensity < 1) return 'text-green-500';
+  if (intensity < 5) return 'text-yellow-500';
+  return 'text-red-500';
 }
 
 function ScrollIntensityTooltip() {
   return (
     <div className="group relative inline-flex">
       <Info className="group-hover:text-foreground h-2.5 w-2.5 cursor-help transition-colors" />
-      <div className="pointer-events-none absolute bottom-full left-1/2 z-50 mb-2 -translate-x-1/2 opacity-0 transition-opacity group-hover:pointer-events-auto group-hover:opacity-100">
-        <div className="bg-foreground text-background w-max max-w-[200px] rounded-md px-3 py-2 text-xs shadow-lg">
-          <p className="mb-1.5 font-medium">Scroll intensity</p>
-          <div className="space-y-0.5 text-[11px] opacity-90">
-            <p>
-              <span className="text-green-400">&lt; 1</span> Reading/watching
-            </p>
-            <p>
-              <span className="text-yellow-400">1-5</span> Normal browsing
-            </p>
-            <p>
-              <span className="text-red-400">5+</span> Doom scrolling
-            </p>
+      <div className="pointer-events-none absolute bottom-full left-0 z-50 mb-2 opacity-0 transition-opacity group-hover:pointer-events-auto group-hover:opacity-100">
+        <div className="w-max max-w-[220px] rounded-md bg-zinc-900 px-3 py-2.5 text-xs text-white shadow-lg">
+          <p className="mb-1.5 font-semibold">Scroll intensity</p>
+          <p className="mb-2.5 text-[11px] leading-relaxed text-zinc-400">
+            Screens scrolled per minute
+          </p>
+          <div className="space-y-1.5 text-[11px]">
+            <div className="flex items-baseline gap-2">
+              <span className="w-6 font-semibold text-green-400">&lt; 1</span>
+              <span className="text-zinc-300">Focused reading</span>
+            </div>
+            <div className="flex items-baseline gap-2">
+              <span className="w-6 font-semibold text-yellow-400">1–5</span>
+              <span className="text-zinc-300">Normal browsing</span>
+            </div>
+            <div className="flex items-baseline gap-2">
+              <span className="w-6 font-semibold text-red-400">5+</span>
+              <span className="text-zinc-300">Doom scrolling</span>
+            </div>
           </div>
         </div>
-        <div className="bg-foreground mx-auto h-2 w-2 -translate-y-1 rotate-45 rounded-sm" />
+        <div className="ml-1 h-2 w-2 -translate-y-1 rotate-45 rounded-sm bg-zinc-900" />
       </div>
     </div>
   );
@@ -374,15 +392,22 @@ export function App() {
                     Scroll
                     <ScrollIntensityTooltip />
                   </p>
-                  <p className="font-semibold">
-                    {formatScrollIntensity(
+                  {(() => {
+                    const intensity = getScrollIntensity(
                       stats.scrollDistance,
                       stats.activeMs
-                    )}
-                    <span className="text-muted-foreground ml-0.5 text-[10px] font-normal">
-                      /min
-                    </span>
-                  </p>
+                    );
+                    return (
+                      <p className="font-semibold">
+                        <span className={getScrollIntensityColor(intensity)}>
+                          {formatScrollIntensity(intensity)}
+                        </span>
+                        <span className="text-muted-foreground ml-0.5 text-[10px] font-normal">
+                          /min
+                        </span>
+                      </p>
+                    );
+                  })()}
                 </div>
               </div>
               <div className="flex items-center gap-2">
