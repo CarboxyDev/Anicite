@@ -1,6 +1,7 @@
 import {
   ArrowLeftRight,
   BarChart3,
+  ChevronDown,
   Clock,
   Eye,
   Globe,
@@ -12,10 +13,15 @@ import {
 } from 'lucide-react';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 
+import {
+  CATEGORIES,
+  type Category,
+  CATEGORY_LIST,
+  getCategoryForHost,
+} from '../../lib/categories';
 import { SETTINGS_KEY, STORAGE_KEY } from '../../lib/constants';
 import { getLocalDateKey } from '../../lib/date';
 import { formatDuration } from '../../lib/format';
-import type { PingResponse } from '../../lib/messaging';
 import {
   DEFAULT_SETTINGS,
   isHostExcluded,
@@ -29,6 +35,15 @@ import {
   updateSettings,
 } from '../../lib/storage';
 import { getUrlParts } from '../../lib/url';
+
+const CATEGORY_COLORS: Record<Category, { bg: string; text: string }> = {
+  productive: { bg: 'bg-emerald-500', text: 'text-emerald-500' },
+  social: { bg: 'bg-blue-500', text: 'text-blue-500' },
+  entertainment: { bg: 'bg-purple-500', text: 'text-purple-500' },
+  shopping: { bg: 'bg-amber-500', text: 'text-amber-500' },
+  reference: { bg: 'bg-fuchsia-500', text: 'text-fuchsia-500' },
+  other: { bg: 'bg-zinc-400', text: 'text-zinc-400' },
+};
 
 const DEFAULT_STATS: StatsTotals = {
   visits: 0,
@@ -127,7 +142,6 @@ export function App() {
     sitesCount: 0,
   });
   const [isLoading, setIsLoading] = useState(true);
-  const [isTracking, setIsTracking] = useState(false);
   const currentKeyRef = useRef<string | null>(null);
 
   const isExcluded = useMemo(() => {
@@ -137,9 +151,29 @@ export function App() {
     return isHostExcluded(currentHost, settings.excludeHosts);
   }, [currentHost, settings.excludeHosts]);
 
+  const currentCategory = useMemo(() => {
+    if (!currentHost) return 'other';
+    return getCategoryForHost(currentHost, settings.siteCategories);
+  }, [currentHost, settings.siteCategories]);
+
   const isOnboardingComplete = useMemo(() => {
     return Object.values(settings.onboarding).every(Boolean);
   }, [settings.onboarding]);
+
+  const handleCategoryChange = async (category: Category) => {
+    if (!currentHost) return;
+    const newCategories = { ...settings.siteCategories };
+    const defaultCategory = getCategoryForHost(currentHost, {});
+
+    if (category === defaultCategory) {
+      delete newCategories[currentHost];
+    } else {
+      newCategories[currentHost] = category;
+    }
+
+    const next = await updateSettings({ siteCategories: newCategories });
+    setSettings(next);
+  };
 
   const updateFromStore = useCallback((store: Store) => {
     const dateKey = getLocalDateKey();
@@ -171,16 +205,6 @@ export function App() {
 
         const store = await getStore();
         updateFromStore(store);
-
-        try {
-          const response = await chrome.tabs.sendMessage<
-            { type: 'PING' },
-            PingResponse
-          >(tab.id, { type: 'PING' });
-          setIsTracking(response?.active ?? false);
-        } catch {
-          setIsTracking(false);
-        }
       }
 
       setIsLoading(false);
@@ -326,12 +350,6 @@ export function App() {
                 <p className="text-muted-foreground text-xs leading-none">
                   Active site
                 </p>
-                {isTracking && (
-                  <span
-                    className="h-1.5 w-1.5 shrink-0 self-center rounded-full bg-green-500"
-                    title="Tracking active"
-                  />
-                )}
                 {isExcluded && (
                   <span className="text-destructive text-[10px] leading-none">
                     Excluded
@@ -341,23 +359,46 @@ export function App() {
               <p className="font-semibold">
                 {currentHost ?? (isLoading ? 'Loading...' : 'No active tab')}
               </p>
+              {currentHost && (
+                <button
+                  className="text-muted-foreground hover:text-foreground mt-0.5 text-[10px] hover:underline"
+                  onClick={async () => {
+                    const newExcludeHosts = isExcluded
+                      ? settings.excludeHosts.filter((h) => h !== currentHost)
+                      : [...settings.excludeHosts, currentHost];
+                    const next = await updateSettings({
+                      excludeHosts: newExcludeHosts,
+                    });
+                    setSettings(next);
+                  }}
+                  type="button"
+                >
+                  {isExcluded ? 'Include this site' : 'Exclude this site'}
+                </button>
+              )}
             </div>
             {currentHost && (
-              <button
-                className="text-muted-foreground hover:text-foreground shrink-0 text-xs hover:underline"
-                onClick={async () => {
-                  const newExcludeHosts = isExcluded
-                    ? settings.excludeHosts.filter((h) => h !== currentHost)
-                    : [...settings.excludeHosts, currentHost];
-                  const next = await updateSettings({
-                    excludeHosts: newExcludeHosts,
-                  });
-                  setSettings(next);
-                }}
-                type="button"
-              >
-                {isExcluded ? 'Include' : 'Exclude'}
-              </button>
+              <div className="relative inline-flex shrink-0">
+                <span
+                  className={`h-2 w-2 shrink-0 self-center rounded-full ${CATEGORY_COLORS[currentCategory].bg}`}
+                />
+                <select
+                  className={`appearance-none bg-transparent py-0.5 pl-1.5 pr-4 text-xs font-medium outline-none ${CATEGORY_COLORS[currentCategory].text}`}
+                  value={currentCategory}
+                  onChange={(e) =>
+                    void handleCategoryChange(e.target.value as Category)
+                  }
+                >
+                  {CATEGORY_LIST.map((cat) => (
+                    <option key={cat} value={cat}>
+                      {CATEGORIES[cat].label}
+                    </option>
+                  ))}
+                </select>
+                <ChevronDown
+                  className={`pointer-events-none absolute right-0 top-1/2 h-2.5 w-2.5 -translate-y-1/2 ${CATEGORY_COLORS[currentCategory].text}`}
+                />
+              </div>
             )}
           </div>
 

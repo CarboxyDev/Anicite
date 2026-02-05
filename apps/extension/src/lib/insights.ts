@@ -1,3 +1,4 @@
+import { type Category, CATEGORY_LIST, getCategoryForHost } from './categories';
 import { getLocalDateKey } from './date';
 import type { StatsTotals, Store } from './storage';
 
@@ -20,6 +21,12 @@ export type AggregatedStats = {
   totals: StatsTotals & { sitesCount: number };
   byDate: DayStats[];
   topSites: SiteStats[];
+};
+
+export type CategoryStats = {
+  category: Category;
+  stats: StatsTotals;
+  percentage: number;
 };
 
 const DAY_NAMES = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
@@ -150,4 +157,57 @@ export function aggregateByPeriod(
   }));
 
   return { totals, byDate, topSites };
+}
+
+export function aggregateByCategory(
+  store: Store,
+  period: Period,
+  userCategories: Record<string, Category>
+): CategoryStats[] {
+  const dateKeys = getDateKeysForPeriod(period);
+  const isAllTime = period === 'all';
+
+  const categoryMap = new Map<Category, StatsTotals>();
+
+  for (const cat of CATEGORY_LIST) {
+    categoryMap.set(cat, emptyTotals());
+  }
+
+  let totalActiveMs = 0;
+
+  for (const page of Object.values(store.pages)) {
+    const category = getCategoryForHost(page.host, userCategories);
+    const catStats = categoryMap.get(category)!;
+
+    if (isAllTime) {
+      addStats(catStats, page.totals);
+      totalActiveMs += page.totals.activeMs;
+    } else {
+      for (const dateKey of dateKeys) {
+        const dayStats = page.byDate[dateKey];
+        if (dayStats) {
+          addStats(catStats, dayStats);
+          totalActiveMs += dayStats.activeMs;
+        }
+      }
+    }
+  }
+
+  const result: CategoryStats[] = [];
+
+  for (const category of CATEGORY_LIST) {
+    const stats = categoryMap.get(category)!;
+    if (stats.activeMs > 0) {
+      result.push({
+        category,
+        stats,
+        percentage:
+          totalActiveMs > 0 ? (stats.activeMs / totalActiveMs) * 100 : 0,
+      });
+    }
+  }
+
+  result.sort((a, b) => b.stats.activeMs - a.stats.activeMs);
+
+  return result;
 }

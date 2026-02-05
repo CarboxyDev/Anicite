@@ -47,6 +47,10 @@ export async function getSettings(): Promise<Settings> {
       ...DEFAULT_SETTINGS.onboarding,
       ...(stored?.onboarding ?? {}),
     },
+    siteCategories: {
+      ...DEFAULT_SETTINGS.siteCategories,
+      ...(stored?.siteCategories ?? {}),
+    },
   };
 }
 
@@ -65,6 +69,10 @@ export async function updateSettings(
       ...current.onboarding,
       ...(partial.onboarding ?? {}),
     },
+    siteCategories:
+      partial.siteCategories !== undefined
+        ? partial.siteCategories
+        : current.siteCategories,
   };
   await setSettings(next);
   return next;

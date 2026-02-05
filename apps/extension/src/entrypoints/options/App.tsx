@@ -1,5 +1,13 @@
-import { useEffect, useState } from 'react';
+import { ChevronDown, Search } from 'lucide-react';
+import { useEffect, useMemo, useState } from 'react';
 
+import {
+  CATEGORIES,
+  type Category,
+  CATEGORY_LIST,
+  getCategoryForHost,
+} from '../../lib/categories';
+import { SETTINGS_KEY, STORAGE_KEY } from '../../lib/constants';
 import {
   DEFAULT_SETTINGS,
   isValidHost,
@@ -7,10 +15,27 @@ import {
   type Settings,
   type TrackingMode,
 } from '../../lib/settings';
-import { clearStore, getSettings, updateSettings } from '../../lib/storage';
+import {
+  clearStore,
+  getSettings,
+  getStore,
+  type PageStats,
+  updateSettings,
+} from '../../lib/storage';
+
+const CATEGORY_COLORS: Record<Category, { bg: string; text: string }> = {
+  productive: { bg: 'bg-emerald-500', text: 'text-emerald-500' },
+  social: { bg: 'bg-blue-500', text: 'text-blue-500' },
+  entertainment: { bg: 'bg-purple-500', text: 'text-purple-500' },
+  shopping: { bg: 'bg-amber-500', text: 'text-amber-500' },
+  reference: { bg: 'bg-fuchsia-500', text: 'text-fuchsia-500' },
+  other: { bg: 'bg-zinc-400', text: 'text-zinc-400' },
+};
 
 export function App() {
   const [settings, setSettings] = useState<Settings>(DEFAULT_SETTINGS);
+  const [trackedSites, setTrackedSites] = useState<PageStats[]>([]);
+  const [categorySearch, setCategorySearch] = useState('');
   const [newHost, setNewHost] = useState('');
   const [hostError, setHostError] = useState<string | null>(null);
   const [showClearConfirm, setShowClearConfirm] = useState(false);
@@ -18,13 +43,56 @@ export function App() {
   const [clearSuccess, setClearSuccess] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
 
+  const filteredSites = useMemo(() => {
+    const search = categorySearch.toLowerCase().trim();
+    if (!search) return trackedSites;
+    return trackedSites.filter((site) =>
+      site.host.toLowerCase().includes(search)
+    );
+  }, [trackedSites, categorySearch]);
+
   useEffect(() => {
     const init = async () => {
-      const storedSettings = await getSettings();
+      const [storedSettings, store] = await Promise.all([
+        getSettings(),
+        getStore(),
+      ]);
       setSettings(storedSettings);
+      const sites = Object.values(store.pages).sort(
+        (a, b) => b.totals.activeMs - a.totals.activeMs
+      );
+      setTrackedSites(sites);
       setIsLoading(false);
     };
     void init();
+  }, []);
+
+  useEffect(() => {
+    const handleStorageChange = (
+      changes: { [key: string]: chrome.storage.StorageChange },
+      areaName: string
+    ) => {
+      if (areaName !== 'local') return;
+
+      if (changes[SETTINGS_KEY]?.newValue) {
+        setSettings(changes[SETTINGS_KEY].newValue as Settings);
+      }
+
+      if (changes[STORAGE_KEY]?.newValue) {
+        const store = changes[STORAGE_KEY].newValue as {
+          pages: Record<string, PageStats>;
+        };
+        const sites = Object.values(store.pages).sort(
+          (a, b) => b.totals.activeMs - a.totals.activeMs
+        );
+        setTrackedSites(sites);
+      }
+    };
+
+    chrome.storage.onChanged.addListener(handleStorageChange);
+    return () => {
+      chrome.storage.onChanged.removeListener(handleStorageChange);
+    };
   }, []);
 
   const handleToggleTracking = async () => {
@@ -80,6 +148,25 @@ export function App() {
       setIsClearing(false);
       setShowClearConfirm(false);
     }
+  };
+
+  const handleCategoryChange = async (host: string, category: Category) => {
+    const newCategories = { ...settings.siteCategories };
+    const defaultCategory = getCategoryForHost(host, {});
+
+    if (category === defaultCategory) {
+      delete newCategories[host];
+    } else {
+      newCategories[host] = category;
+    }
+
+    const next = await updateSettings({ siteCategories: newCategories });
+    setSettings(next);
+  };
+
+  const handleResetCategories = async () => {
+    const next = await updateSettings({ siteCategories: {} });
+    setSettings(next);
   };
 
   if (isLoading) {
@@ -235,6 +322,92 @@ export function App() {
             ) : (
               <p className="text-muted-foreground mt-4 text-xs">
                 No excluded sites. All sites are being tracked.
+              </p>
+            )}
+          </section>
+
+          <section className="card">
+            <div>
+              <h2 className="font-semibold">Site Categories</h2>
+              <p className="text-muted-foreground mt-1 text-xs">
+                Categorize your sites to see time breakdowns in Insights.
+              </p>
+            </div>
+
+            {trackedSites.length > 0 ? (
+              <>
+                {trackedSites.length > 5 && (
+                  <div className="relative mt-4">
+                    <Search className="text-muted-foreground pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2" />
+                    <input
+                      type="text"
+                      className="input w-full pl-9"
+                      placeholder="Search sites..."
+                      value={categorySearch}
+                      onChange={(e) => setCategorySearch(e.target.value)}
+                    />
+                  </div>
+                )}
+
+                <div className="mt-4 space-y-2">
+                  {filteredSites.slice(0, 20).map((site) => {
+                    const category = getCategoryForHost(
+                      site.host,
+                      settings.siteCategories
+                    );
+                    return (
+                      <div
+                        key={site.key}
+                        className="border-border bg-muted/30 flex items-center justify-between gap-2 rounded-md border px-3 py-2"
+                      >
+                        <span className="min-w-0 truncate text-sm">
+                          {site.host}
+                        </span>
+                        <div className="relative shrink-0">
+                          <select
+                            className={`appearance-none rounded-md border-0 bg-transparent py-1 pl-2 pr-6 text-xs font-medium outline-none ${CATEGORY_COLORS[category].text}`}
+                            value={category}
+                            onChange={(e) =>
+                              void handleCategoryChange(
+                                site.host,
+                                e.target.value as Category
+                              )
+                            }
+                          >
+                            {CATEGORY_LIST.map((cat) => (
+                              <option key={cat} value={cat}>
+                                {CATEGORIES[cat].label}
+                              </option>
+                            ))}
+                          </select>
+                          <ChevronDown
+                            className={`pointer-events-none absolute right-0 top-1/2 h-3 w-3 -translate-y-1/2 ${CATEGORY_COLORS[category].text}`}
+                          />
+                        </div>
+                      </div>
+                    );
+                  })}
+                  {filteredSites.length > 20 && (
+                    <p className="text-muted-foreground text-xs">
+                      Showing 20 of {filteredSites.length} sites. Use search to
+                      find more.
+                    </p>
+                  )}
+                </div>
+
+                {Object.keys(settings.siteCategories).length > 0 && (
+                  <button
+                    className="text-muted-foreground mt-4 text-xs hover:underline"
+                    onClick={() => void handleResetCategories()}
+                    type="button"
+                  >
+                    Reset all to defaults
+                  </button>
+                )}
+              </>
+            ) : (
+              <p className="text-muted-foreground mt-4 text-xs">
+                No tracked sites yet. Browse the web to start tracking.
               </p>
             )}
           </section>

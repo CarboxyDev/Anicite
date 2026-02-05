@@ -1,3 +1,5 @@
+import type { Category } from './categories';
+
 export type DataGranularity = 'host' | 'path';
 
 export type TrackingMode = 'focused' | 'visible';
@@ -14,6 +16,7 @@ export type Settings = {
   dataGranularity: DataGranularity;
   trackingMode: TrackingMode;
   onboarding: OnboardingState;
+  siteCategories: Record<string, Category>;
 };
 
 export const DEFAULT_SETTINGS: Settings = {
@@ -26,6 +29,7 @@ export const DEFAULT_SETTINGS: Settings = {
     privacyReviewed: false,
     pinExtension: false,
   },
+  siteCategories: {},
 };
 
 export function normalizeHost(input: string): string {

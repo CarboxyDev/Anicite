@@ -18,14 +18,22 @@ import {
   useTransition,
 } from 'react';
 
-import { STORAGE_KEY } from '../../lib/constants';
+import {
+  CATEGORIES,
+  type Category,
+  getCategoryForHost,
+} from '../../lib/categories';
+import { SETTINGS_KEY, STORAGE_KEY } from '../../lib/constants';
 import { formatDuration } from '../../lib/format';
 import {
+  aggregateByCategory,
   aggregateByPeriod,
   type AggregatedStats,
+  type CategoryStats,
   type Period,
 } from '../../lib/insights';
-import { getStore, type Store } from '../../lib/storage';
+import { DEFAULT_SETTINGS, type Settings } from '../../lib/settings';
+import { getSettings, getStore, type Store } from '../../lib/storage';
 
 const PERIODS: { value: Period; label: string }[] = [
   { value: 'today', label: 'Today' },
@@ -43,6 +51,82 @@ const SORT_OPTIONS: { value: SortMetric; label: string; icon: typeof Clock }[] =
     { value: 'scroll', label: 'Scroll intensity', icon: MoveVertical },
     { value: 'switches', label: 'Tab switches', icon: ArrowLeftRight },
   ];
+
+const CATEGORY_COLORS: Record<Category, { bg: string; text: string }> = {
+  productive: { bg: 'bg-emerald-500', text: 'text-emerald-500' },
+  social: { bg: 'bg-blue-500', text: 'text-blue-500' },
+  entertainment: { bg: 'bg-purple-500', text: 'text-purple-500' },
+  shopping: { bg: 'bg-amber-500', text: 'text-amber-500' },
+  reference: { bg: 'bg-fuchsia-500', text: 'text-fuchsia-500' },
+  other: { bg: 'bg-zinc-400', text: 'text-zinc-400' },
+};
+
+const CATEGORY_SVG_COLORS: Record<Category, string> = {
+  productive: '#10b981',
+  social: '#3b82f6',
+  entertainment: '#a855f7',
+  shopping: '#f59e0b',
+  reference: '#d946ef',
+  other: '#a1a1aa',
+};
+
+function DonutChart({ data }: { data: CategoryStats[] }) {
+  const size = 120;
+  const strokeWidth = 24;
+  const radius = (size - strokeWidth) / 2;
+  const circumference = 2 * Math.PI * radius;
+
+  const segments = useMemo(() => {
+    const result: {
+      category: Category;
+      length: number;
+      offset: number;
+      color: string;
+    }[] = [];
+    let currentOffset = 0;
+
+    for (const item of data) {
+      const length = (item.percentage / 100) * circumference;
+      result.push({
+        category: item.category,
+        length,
+        offset: currentOffset,
+        color: CATEGORY_SVG_COLORS[item.category],
+      });
+      currentOffset += length;
+    }
+
+    return result;
+  }, [data, circumference]);
+
+  return (
+    <svg width={size} height={size} className="shrink-0 -rotate-90">
+      <circle
+        cx={size / 2}
+        cy={size / 2}
+        r={radius}
+        fill="none"
+        stroke="currentColor"
+        strokeWidth={strokeWidth}
+        className="text-muted"
+      />
+      {segments.map((seg) => (
+        <circle
+          key={seg.category}
+          cx={size / 2}
+          cy={size / 2}
+          r={radius}
+          fill="none"
+          stroke={seg.color}
+          strokeWidth={strokeWidth}
+          strokeDasharray={`${seg.length} ${circumference - seg.length}`}
+          strokeDashoffset={-seg.offset}
+          className="transition-all duration-300"
+        />
+      ))}
+    </svg>
+  );
+}
 
 function getScrollIntensity(
   scrollDistance: number | undefined,
@@ -74,20 +158,34 @@ export function App() {
   const [period, setPeriod] = useState<Period>('today');
   const [sortBy, setSortBy] = useState<SortMetric>('time');
   const [data, setData] = useState<AggregatedStats | null>(null);
+  const [categoryStats, setCategoryStats] = useState<CategoryStats[]>([]);
+  const [settings, setSettings] = useState<Settings>(DEFAULT_SETTINGS);
   const [isLoading, setIsLoading] = useState(true);
   const [isPending, startTransition] = useTransition();
   const periodRef = useRef<Period>('today');
+  const settingsRef = useRef<Settings>(DEFAULT_SETTINGS);
 
   const updateFromStore = useCallback((store: Store) => {
     const aggregated = aggregateByPeriod(store, periodRef.current);
     setData(aggregated);
+    const catStats = aggregateByCategory(
+      store,
+      periodRef.current,
+      settingsRef.current.siteCategories
+    );
+    setCategoryStats(catStats);
   }, []);
 
   useEffect(() => {
     periodRef.current = period;
     const loadData = async () => {
       setIsLoading(true);
-      const store = await getStore();
+      const [store, loadedSettings] = await Promise.all([
+        getStore(),
+        getSettings(),
+      ]);
+      settingsRef.current = loadedSettings;
+      setSettings(loadedSettings);
       updateFromStore(store);
       setIsLoading(false);
     };
@@ -100,6 +198,13 @@ export function App() {
       areaName: string
     ) => {
       if (areaName !== 'local') return;
+
+      if (changes[SETTINGS_KEY]?.newValue) {
+        const newSettings = changes[SETTINGS_KEY].newValue as Settings;
+        settingsRef.current = newSettings;
+        setSettings(newSettings);
+      }
+
       if (changes[STORAGE_KEY]?.newValue) {
         updateFromStore(changes[STORAGE_KEY].newValue as Store);
       }
@@ -357,6 +462,39 @@ export function App() {
             </div>
           </section>
 
+          {categoryStats.length > 0 && (
+            <section className="card">
+              <h2 className="text-sm font-semibold">Time by Category</h2>
+              <p className="text-muted-foreground mt-1 text-xs">
+                Activity breakdown by site category
+              </p>
+              <div className="mt-4 flex items-start gap-6">
+                <DonutChart data={categoryStats} />
+                <div className="flex-1 space-y-2">
+                  {categoryStats.map((cat) => (
+                    <div
+                      key={cat.category}
+                      className="flex items-center gap-2 text-xs"
+                    >
+                      <span
+                        className={`h-2.5 w-2.5 shrink-0 rounded-full ${CATEGORY_COLORS[cat.category].bg}`}
+                      />
+                      <span className="min-w-[80px] font-medium">
+                        {CATEGORIES[cat.category].label}
+                      </span>
+                      <span className="text-muted-foreground">
+                        {cat.percentage.toFixed(0)}%
+                      </span>
+                      <span className="text-muted-foreground ml-auto">
+                        {formatDuration(cat.stats.activeMs)}
+                      </span>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            </section>
+          )}
+
           <section className="card">
             <h2 className="text-sm font-semibold">Daily Activity</h2>
             <p className="text-muted-foreground mt-1 text-xs">
@@ -415,6 +553,10 @@ export function App() {
               <div className="mt-4 space-y-3">
                 {sortedSites.map((site, index) => {
                   const pct = getSiteProgress(site);
+                  const category = getCategoryForHost(
+                    site.host,
+                    settings.siteCategories
+                  );
                   return (
                     <div key={site.key} className="space-y-1">
                       <div className="flex items-center justify-between gap-2 text-sm">
@@ -424,6 +566,14 @@ export function App() {
                           </span>
                           <span className="truncate font-medium">
                             {site.host}
+                          </span>
+                          <span
+                            className={`flex shrink-0 items-center gap-1 text-[10px] ${CATEGORY_COLORS[category].text}`}
+                          >
+                            <span
+                              className={`h-1.5 w-1.5 rounded-full ${CATEGORY_COLORS[category].bg}`}
+                            />
+                            {CATEGORIES[category].label}
                           </span>
                         </div>
                         <span className="text-muted-foreground shrink-0 text-xs">
