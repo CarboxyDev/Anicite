@@ -120,13 +120,15 @@ export function aggregateByPeriod(
   };
 
   const dateMap = new Map<string, StatsTotals>();
-  const siteMap = new Map<string, SiteStats>();
+  // Use host as key to aggregate all paths of the same domain together
+  const hostStatsMap = new Map<string, StatsTotals>();
+  const uniqueHosts = new Set<string>();
 
   for (const page of Object.values(store.pages)) {
-    let siteStats: StatsTotals | null = null;
+    let pageStats: StatsTotals | null = null;
 
     if (isAllTime) {
-      siteStats = { ...page.totals };
+      pageStats = { ...page.totals };
       addStats(totals, page.totals);
 
       for (const [dateKey, dayStats] of Object.entries(page.byDate)) {
@@ -135,12 +137,12 @@ export function aggregateByPeriod(
         dateMap.set(dateKey, existing);
       }
     } else {
-      siteStats = emptyTotals();
+      pageStats = emptyTotals();
 
       for (const dateKey of dateKeys) {
         const dayStats = page.byDate[dateKey];
         if (dayStats) {
-          addStats(siteStats, dayStats);
+          addStats(pageStats, dayStats);
           addStats(totals, dayStats);
 
           const existing = dateMap.get(dateKey) ?? emptyTotals();
@@ -150,18 +152,26 @@ export function aggregateByPeriod(
       }
     }
 
-    if (siteStats && siteStats.activeMs > 0) {
-      totals.sitesCount++;
-      siteMap.set(page.key, {
-        key: page.key,
-        host: page.host,
-        path: page.path,
-        stats: siteStats,
-      });
+    if (pageStats && pageStats.activeMs > 0) {
+      // Aggregate by host to combine all paths of the same domain
+      const existingHostStats = hostStatsMap.get(page.host);
+      if (existingHostStats) {
+        addStats(existingHostStats, pageStats);
+      } else {
+        hostStatsMap.set(page.host, { ...pageStats });
+        uniqueHosts.add(page.host);
+      }
     }
   }
 
-  const topSites = Array.from(siteMap.values())
+  totals.sitesCount = uniqueHosts.size;
+
+  const topSites: SiteStats[] = Array.from(hostStatsMap.entries())
+    .map(([host, stats]) => ({
+      key: host,
+      host,
+      stats,
+    }))
     .sort((a, b) => b.stats.activeMs - a.stats.activeMs)
     .slice(0, 10);
 

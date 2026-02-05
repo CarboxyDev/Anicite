@@ -61,6 +61,7 @@ interface TodayTotals extends StatsTotals {
 function computeTodayTotals(store: Store): TodayTotals {
   const dateKey = getLocalDateKey();
   const totals: TodayTotals = { ...DEFAULT_STATS, sitesCount: 0 };
+  const uniqueHosts = new Set<string>();
 
   for (const entry of Object.values(store.pages)) {
     const day = entry.byDate[dateKey];
@@ -71,8 +72,10 @@ function computeTodayTotals(store: Store): TodayTotals {
     totals.clicks += day.clicks;
     totals.tabSwitches += day.tabSwitches;
     totals.scrollDistance += day.scrollDistance ?? 0;
-    totals.sitesCount += 1;
+    uniqueHosts.add(entry.host);
   }
+
+  totals.sitesCount = uniqueHosts.size;
 
   return totals;
 }
