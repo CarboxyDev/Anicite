@@ -19,6 +19,7 @@ export type PageStats = {
   lastSeenAt: number;
   totals: StatsTotals;
   byDate: Record<string, StatsTotals>;
+  byHour: Record<string, StatsTotals>;
 };
 
 export type Store = {
@@ -82,7 +83,31 @@ export async function getStore(): Promise<Store> {
   const result = await chrome.storage.local.get(STORAGE_KEY);
   const stored = result[STORAGE_KEY] as Store | undefined;
 
-  if (!stored || stored.version !== STORE_VERSION) {
+  if (!stored) {
+    return {
+      version: STORE_VERSION,
+      pages: {},
+    };
+  }
+
+  if (stored.version === 1) {
+    const migrated: Store = {
+      version: STORE_VERSION,
+      pages: {},
+    };
+
+    for (const [key, page] of Object.entries(stored.pages)) {
+      migrated.pages[key] = {
+        ...page,
+        byHour: {},
+      };
+    }
+
+    await setStore(migrated);
+    return migrated;
+  }
+
+  if (stored.version !== STORE_VERSION) {
     return {
       version: STORE_VERSION,
       pages: {},
@@ -111,6 +136,7 @@ export type UpdatePageArgs = {
   host: string;
   path?: string;
   dateKey: string;
+  hourKey: string;
   delta: StatsDelta;
 };
 
@@ -120,6 +146,7 @@ export async function updatePageStats({
   host,
   path,
   dateKey,
+  hourKey,
   delta,
 }: UpdatePageArgs): Promise<void> {
   const store = await getStore();
@@ -135,9 +162,11 @@ export async function updatePageStats({
     lastSeenAt: now,
     totals: emptyTotals(),
     byDate: {},
+    byHour: {},
   };
 
   const day = page.byDate[dateKey] ?? emptyTotals();
+  const hour = page.byHour[hourKey] ?? emptyTotals();
 
   const visits = delta.visits ?? 0;
   const sessions = delta.sessions ?? 0;
@@ -150,19 +179,28 @@ export async function updatePageStats({
   page.totals.activeMs += activeMs;
   page.totals.clicks += clicks;
   page.totals.tabSwitches += tabSwitches;
+
   day.visits += visits;
   day.sessions += sessions;
   day.activeMs += activeMs;
   day.clicks += clicks;
   day.tabSwitches += tabSwitches;
 
+  hour.visits += visits;
+  hour.sessions += sessions;
+  hour.activeMs += activeMs;
+  hour.clicks += clicks;
+  hour.tabSwitches += tabSwitches;
+
   if (typeof delta.scrollDistance === 'number') {
     page.totals.scrollDistance += delta.scrollDistance;
     day.scrollDistance += delta.scrollDistance;
+    hour.scrollDistance += delta.scrollDistance;
   }
 
   page.lastSeenAt = now;
   page.byDate[dateKey] = day;
+  page.byHour[hourKey] = hour;
   store.pages[key] = page;
 
   await setStore(store);

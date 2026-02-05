@@ -8,6 +8,7 @@ export type UpdateStatsMessage = {
     host: string;
     path?: string;
     dateKey: string;
+    hourKey: string;
     delta: StatsDelta;
   };
 };

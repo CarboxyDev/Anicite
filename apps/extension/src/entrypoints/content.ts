@@ -2,7 +2,7 @@ import type { ContentScriptDefinition } from 'wxt';
 import { defineContentScript } from 'wxt/sandbox';
 
 import { SETTINGS_KEY } from '../lib/constants';
-import { getLocalDateKey } from '../lib/date';
+import { getLocalDateKey, getLocalHourKey } from '../lib/date';
 import type { PingMessage, PingResponse } from '../lib/messaging';
 import { sendUpdateStats } from '../lib/messaging';
 import { isHostExcluded } from '../lib/settings';
@@ -154,6 +154,7 @@ const contentScript: ContentScriptDefinition = defineContentScript({
           host: urlParts.host,
           path: urlParts.path,
           dateKey: getLocalDateKey(),
+          hourKey: getLocalHourKey(),
           delta: {
             activeMs: deltaActiveMs,
             clicks: deltaClicks,
@@ -285,6 +286,7 @@ const contentScript: ContentScriptDefinition = defineContentScript({
             host: newUrlParts.host,
             path: newUrlParts.path,
             dateKey: getLocalDateKey(),
+            hourKey: getLocalHourKey(),
             delta: {
               visits: 1,
               sessions: isNewSession ? 1 : 0,
@@ -414,6 +416,7 @@ const contentScript: ContentScriptDefinition = defineContentScript({
         host: urlParts.host,
         path: urlParts.path,
         dateKey: getLocalDateKey(),
+        hourKey: getLocalHourKey(),
         delta: {
           visits: 1,
           sessions: isNewSession ? 1 : 0,

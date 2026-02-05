@@ -1,5 +1,10 @@
 import { type Category, CATEGORY_LIST, getCategoryForHost } from './categories';
-import { getLocalDateKey } from './date';
+import {
+  getDateFromHourKey,
+  getDayOfWeekFromKey,
+  getHourFromKey,
+  getLocalDateKey,
+} from './date';
 import type { StatsTotals, Store } from './storage';
 
 export type Period = 'today' | '7days' | '30days' | 'all';
@@ -27,6 +32,21 @@ export type CategoryStats = {
   category: Category;
   stats: StatsTotals;
   percentage: number;
+};
+
+export type HourlyIntensity = 'none' | 'low' | 'medium' | 'high' | 'peak';
+
+export type HourlyCell = {
+  dayOfWeek: number;
+  hour: number;
+  stats: StatsTotals;
+  intensity: HourlyIntensity;
+};
+
+export type HourlyPatternData = {
+  grid: HourlyCell[][];
+  maxActiveMs: number;
+  hasData: boolean;
 };
 
 const DAY_NAMES = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
@@ -210,4 +230,77 @@ export function aggregateByCategory(
   result.sort((a, b) => b.stats.activeMs - a.stats.activeMs);
 
   return result;
+}
+
+function calculateIntensity(
+  activeMs: number,
+  maxActiveMs: number
+): HourlyIntensity {
+  if (activeMs === 0 || maxActiveMs === 0) return 'none';
+
+  const ratio = activeMs / maxActiveMs;
+
+  if (ratio < 0.2) return 'low';
+  if (ratio < 0.4) return 'medium';
+  if (ratio < 0.7) return 'high';
+  return 'peak';
+}
+
+export function aggregateByHour(
+  store: Store,
+  period: Period
+): HourlyPatternData {
+  const dateKeys = getDateKeysForPeriod(period);
+  const isAllTime = period === 'all';
+
+  const grid: StatsTotals[][] = Array.from({ length: 7 }, () =>
+    Array.from({ length: 24 }, () => emptyTotals())
+  );
+
+  let hasAnyData = false;
+
+  for (const page of Object.values(store.pages)) {
+    if (!page.byHour) continue;
+
+    for (const [hourKey, hourStats] of Object.entries(page.byHour)) {
+      const dateKey = getDateFromHourKey(hourKey);
+
+      if (!isAllTime && !dateKeys.includes(dateKey)) {
+        continue;
+      }
+
+      const dayOfWeek = getDayOfWeekFromKey(hourKey);
+      const hour = getHourFromKey(hourKey);
+
+      addStats(grid[dayOfWeek][hour], hourStats);
+
+      if (hourStats.activeMs > 0) {
+        hasAnyData = true;
+      }
+    }
+  }
+
+  let maxActiveMs = 0;
+  for (let day = 0; day < 7; day++) {
+    for (let h = 0; h < 24; h++) {
+      if (grid[day][h].activeMs > maxActiveMs) {
+        maxActiveMs = grid[day][h].activeMs;
+      }
+    }
+  }
+
+  const result: HourlyCell[][] = grid.map((dayRow, dayOfWeek) =>
+    dayRow.map((stats, hour) => ({
+      dayOfWeek,
+      hour,
+      stats,
+      intensity: calculateIntensity(stats.activeMs, maxActiveMs),
+    }))
+  );
+
+  return {
+    grid: result,
+    maxActiveMs,
+    hasData: hasAnyData,
+  };
 }

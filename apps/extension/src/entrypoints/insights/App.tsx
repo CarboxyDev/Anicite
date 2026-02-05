@@ -27,9 +27,12 @@ import { SETTINGS_KEY, STORAGE_KEY } from '../../lib/constants';
 import { formatDuration } from '../../lib/format';
 import {
   aggregateByCategory,
+  aggregateByHour,
   aggregateByPeriod,
   type AggregatedStats,
   type CategoryStats,
+  type HourlyCell,
+  type HourlyPatternData,
   type Period,
 } from '../../lib/insights';
 import { DEFAULT_SETTINGS, type Settings } from '../../lib/settings';
@@ -154,11 +157,111 @@ function EmptyState({ period }: { period: Period }) {
   return <p className="text-muted-foreground mt-4 text-sm">{message}</p>;
 }
 
+const DAY_LABELS = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
+const HOUR_LABELS = ['12a', '3a', '6a', '9a', '12p', '3p', '6p', '9p'];
+
+function formatHour(hour: number): string {
+  if (hour === 0) return '12am';
+  if (hour === 12) return '12pm';
+  if (hour < 12) return `${hour}am`;
+  return `${hour - 12}pm`;
+}
+
+function HeatmapCell({
+  cell,
+  dayLabel,
+}: {
+  cell: HourlyCell;
+  dayLabel: string;
+}) {
+  const [showTooltip, setShowTooltip] = useState(false);
+
+  return (
+    <div
+      className={`heatmap-cell heatmap-${cell.intensity} relative`}
+      onMouseEnter={() => setShowTooltip(true)}
+      onMouseLeave={() => setShowTooltip(false)}
+    >
+      {showTooltip && (
+        <div className="bg-popover text-popover-foreground border-border absolute bottom-full left-1/2 z-20 mb-2 -translate-x-1/2 whitespace-nowrap rounded border px-2 py-1 text-xs shadow-md">
+          <div className="font-medium">
+            {dayLabel} {formatHour(cell.hour)}
+          </div>
+          <div className="text-muted-foreground">
+            {cell.stats.activeMs > 0
+              ? formatDuration(cell.stats.activeMs)
+              : 'No activity'}
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
+
+function Heatmap({ data }: { data: HourlyPatternData }) {
+  if (!data.hasData) {
+    return (
+      <p className="text-muted-foreground mt-4 text-sm">
+        Hourly patterns will appear as you browse.
+      </p>
+    );
+  }
+
+  return (
+    <div className="mt-4 overflow-x-auto">
+      <div className="inline-block min-w-full">
+        <div className="mb-1 flex">
+          <div className="w-9 shrink-0" />
+          {[0, 3, 6, 9, 12, 15, 18, 21].map((hour, i) => (
+            <div
+              key={hour}
+              className="text-muted-foreground text-[10px]"
+              style={{ width: '36px' }}
+            >
+              {HOUR_LABELS[i]}
+            </div>
+          ))}
+        </div>
+
+        <div className="space-y-0.5">
+          {DAY_LABELS.map((day, dayIndex) => (
+            <div key={day} className="flex items-center">
+              <div className="text-muted-foreground w-9 shrink-0 text-[10px]">
+                {day}
+              </div>
+              <div className="flex gap-0.5">
+                {data.grid[dayIndex].map((cell) => (
+                  <HeatmapCell
+                    key={`${dayIndex}-${cell.hour}`}
+                    cell={cell}
+                    dayLabel={day}
+                  />
+                ))}
+              </div>
+            </div>
+          ))}
+        </div>
+
+        <div className="text-muted-foreground mt-3 flex items-center justify-end gap-1 text-[10px]">
+          <span>Less</span>
+          <div className="heatmap-cell heatmap-none" />
+          <div className="heatmap-cell heatmap-low" />
+          <div className="heatmap-cell heatmap-medium" />
+          <div className="heatmap-cell heatmap-high" />
+          <div className="heatmap-cell heatmap-peak" />
+          <span>More</span>
+        </div>
+      </div>
+    </div>
+  );
+}
+
 export function App() {
   const [period, setPeriod] = useState<Period>('today');
   const [sortBy, setSortBy] = useState<SortMetric>('time');
   const [data, setData] = useState<AggregatedStats | null>(null);
   const [categoryStats, setCategoryStats] = useState<CategoryStats[]>([]);
+  const [hourlyData, setHourlyData] = useState<HourlyPatternData | null>(null);
   const [settings, setSettings] = useState<Settings>(DEFAULT_SETTINGS);
   const [isLoading, setIsLoading] = useState(true);
   const [isPending, startTransition] = useTransition();
@@ -174,6 +277,8 @@ export function App() {
       settingsRef.current.siteCategories
     );
     setCategoryStats(catStats);
+    const hourly = aggregateByHour(store, periodRef.current);
+    setHourlyData(hourly);
   }, []);
 
   useEffect(() => {
@@ -347,6 +452,18 @@ export function App() {
                 ))}
               </div>
             </div>
+            <div className="card">
+              <div className="bg-muted h-4 w-28 animate-pulse rounded" />
+              <div className="bg-muted mt-1 h-3 w-44 animate-pulse rounded" />
+              <div className="mt-4 space-y-1">
+                {[1, 2, 3, 4, 5, 6, 7].map((i) => (
+                  <div key={i} className="flex items-center gap-2">
+                    <div className="bg-muted h-3 w-8 animate-pulse rounded" />
+                    <div className="bg-muted h-3 flex-1 animate-pulse rounded" />
+                  </div>
+                ))}
+              </div>
+            </div>
             {[1, 2].map((i) => (
               <div key={i} className="card">
                 <div className="bg-muted h-4 w-24 animate-pulse rounded" />
@@ -494,6 +611,14 @@ export function App() {
               </div>
             </section>
           )}
+
+          <section className="card">
+            <h2 className="text-sm font-semibold">Hourly Patterns</h2>
+            <p className="text-muted-foreground mt-1 text-xs">
+              When you're most active during the week
+            </p>
+            {hourlyData && <Heatmap data={hourlyData} />}
+          </section>
 
           <section className="card">
             <h2 className="text-sm font-semibold">Daily Activity</h2>
