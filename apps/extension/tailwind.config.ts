@@ -60,6 +60,9 @@ export default {
         md: 'var(--shadow-md)',
         lg: 'var(--shadow-lg)',
       },
+      gridTemplateColumns: {
+        '24': 'repeat(24, minmax(0, 1fr))',
+      },
     },
   },
   plugins: [],

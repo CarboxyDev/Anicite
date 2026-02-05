@@ -158,7 +158,7 @@ function EmptyState({ period }: { period: Period }) {
 }
 
 const DAY_LABELS = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
-const HOUR_LABELS = ['12a', '3a', '6a', '9a', '12p', '3p', '6p', '9p'];
+const HOUR_LABELS = ['12am', '3am', '6am', '9am', '12pm', '3pm', '6pm', '9pm'];
 
 function formatHour(hour: number): string {
   if (hour === 0) return '12am';
@@ -198,6 +198,61 @@ function HeatmapCell({
   );
 }
 
+function TodayHourlyChart({ data }: { data: HourlyPatternData }) {
+  const today = new Date().getDay();
+  const todayRow = data.grid[today];
+
+  if (!data.hasData) {
+    return (
+      <p className="text-muted-foreground mt-4 text-sm">
+        Hourly activity will appear as you browse today.
+      </p>
+    );
+  }
+
+  const maxMs = Math.max(...todayRow.map((c) => c.stats.activeMs), 1);
+
+  return (
+    <div className="mt-4">
+      <div className="flex h-24 items-end gap-[2px]">
+        {todayRow.map((cell, i) => {
+          const height =
+            cell.stats.activeMs > 0
+              ? Math.max((cell.stats.activeMs / maxMs) * 100, 8)
+              : 4;
+          return (
+            <div
+              key={i}
+              className="group relative flex-1"
+              style={{ height: '100%' }}
+            >
+              <div
+                className={`heatmap-cell-bar absolute bottom-0 w-full rounded-t transition-all heatmap-${cell.intensity}`}
+                style={{ height: `${height}%` }}
+              />
+              <div className="bg-popover text-popover-foreground border-border absolute bottom-full left-1/2 z-20 mb-2 hidden -translate-x-1/2 whitespace-nowrap rounded border px-2 py-1 text-xs shadow-md group-hover:block">
+                <div className="font-medium">{formatHour(cell.hour)}</div>
+                <div className="text-muted-foreground">
+                  {cell.stats.activeMs > 0
+                    ? formatDuration(cell.stats.activeMs)
+                    : 'No activity'}
+                </div>
+              </div>
+            </div>
+          );
+        })}
+      </div>
+      <div className="text-muted-foreground mt-2 flex justify-between text-[10px]">
+        <span>12am</span>
+        <span>6am</span>
+        <span>12pm</span>
+        <span>6pm</span>
+        <span>11pm</span>
+      </div>
+    </div>
+  );
+}
+
 function Heatmap({ data }: { data: HourlyPatternData }) {
   if (!data.hasData) {
     return (
@@ -208,41 +263,45 @@ function Heatmap({ data }: { data: HourlyPatternData }) {
   }
 
   return (
-    <div className="mt-4 overflow-x-auto">
-      <div className="inline-block min-w-full">
-        <div className="mb-1 flex">
-          <div className="w-9 shrink-0" />
+    <div className="mt-4 w-full">
+      {/* Hour labels row */}
+      <div className="mb-1 flex">
+        <div className="w-10 shrink-0" />
+        <div className="grid-cols-24 grid flex-1">
           {[0, 3, 6, 9, 12, 15, 18, 21].map((hour, i) => (
             <div
               key={hour}
-              className="text-muted-foreground text-[10px]"
-              style={{ width: '36px' }}
+              className="text-muted-foreground col-span-3 text-[10px]"
             >
               {HOUR_LABELS[i]}
             </div>
           ))}
         </div>
+      </div>
 
-        <div className="space-y-0.5">
-          {DAY_LABELS.map((day, dayIndex) => (
-            <div key={day} className="flex items-center">
-              <div className="text-muted-foreground w-9 shrink-0 text-[10px]">
-                {day}
-              </div>
-              <div className="flex gap-0.5">
-                {data.grid[dayIndex].map((cell) => (
-                  <HeatmapCell
-                    key={`${dayIndex}-${cell.hour}`}
-                    cell={cell}
-                    dayLabel={day}
-                  />
-                ))}
-              </div>
+      {/* Grid rows */}
+      <div className="space-y-0.5">
+        {DAY_LABELS.map((day, dayIndex) => (
+          <div key={day} className="flex items-center">
+            <div className="text-muted-foreground w-10 shrink-0 text-[10px]">
+              {day}
             </div>
-          ))}
-        </div>
+            <div className="grid-cols-24 grid flex-1 gap-[2px]">
+              {data.grid[dayIndex].map((cell) => (
+                <HeatmapCell
+                  key={`${dayIndex}-${cell.hour}`}
+                  cell={cell}
+                  dayLabel={day}
+                />
+              ))}
+            </div>
+          </div>
+        ))}
+      </div>
 
-        <div className="text-muted-foreground mt-3 flex items-center justify-end gap-1 text-[10px]">
+      {/* Legend - centered */}
+      <div className="mt-4 flex justify-center">
+        <div className="text-muted-foreground flex items-center gap-1.5 text-[10px]">
           <span>Less</span>
           <div className="heatmap-cell heatmap-none" />
           <div className="heatmap-cell heatmap-low" />
@@ -613,11 +672,20 @@ export function App() {
           )}
 
           <section className="card">
-            <h2 className="text-sm font-semibold">Hourly Patterns</h2>
+            <h2 className="text-sm font-semibold">
+              {period === 'today' ? "Today's Activity" : 'Hourly Patterns'}
+            </h2>
             <p className="text-muted-foreground mt-1 text-xs">
-              When you're most active during the week
+              {period === 'today'
+                ? 'Your hourly activity breakdown for today'
+                : "When you're most active during the week"}
             </p>
-            {hourlyData && <Heatmap data={hourlyData} />}
+            {hourlyData &&
+              (period === 'today' ? (
+                <TodayHourlyChart data={hourlyData} />
+              ) : (
+                <Heatmap data={hourlyData} />
+              ))}
           </section>
 
           <section className="card">
