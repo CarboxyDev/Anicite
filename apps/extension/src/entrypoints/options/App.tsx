@@ -8,6 +8,7 @@ import {
   getCategoryForHost,
 } from '../../lib/categories';
 import { SETTINGS_KEY, STORAGE_KEY, STORE_VERSION } from '../../lib/constants';
+import { getLocalDateKey } from '../../lib/date';
 import {
   DEFAULT_SETTINGS,
   isValidHost,
@@ -39,9 +40,8 @@ function getDateRangeFilter(range: ExportDateRange): (date: string) => boolean {
 
   const days = range === '7d' ? 7 : range === '30d' ? 30 : 90;
   const cutoff = new Date();
-  cutoff.setDate(cutoff.getDate() - days);
-  cutoff.setHours(0, 0, 0, 0);
-  const cutoffStr = cutoff.toISOString().split('T')[0];
+  cutoff.setDate(cutoff.getDate() - (days - 1));
+  const cutoffStr = getLocalDateKey(cutoff);
 
   return (date: string) => date >= cutoffStr;
 }
