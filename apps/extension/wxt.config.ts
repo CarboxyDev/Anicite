@@ -8,7 +8,7 @@ export default defineConfig({
     name: 'Anicite',
     description: 'Chrome analytics done right',
     manifest_version: 3,
-    permissions: ['storage', 'tabs'],
+    permissions: ['storage'],
     host_permissions: ['http://*/*', 'https://*/*'],
     action: {
       default_title: 'Anicite',
