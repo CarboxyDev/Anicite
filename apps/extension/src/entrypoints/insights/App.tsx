@@ -1,6 +1,8 @@
 import {
   ArrowLeftRight,
   ChevronDown,
+  ChevronLeft,
+  ChevronRight,
   Clock,
   Eye,
   Globe,
@@ -21,6 +23,7 @@ import {
 import {
   CATEGORIES,
   type Category,
+  CATEGORY_LIST,
   getCategoryForHost,
 } from '../../lib/categories';
 import { SETTINGS_KEY, STORAGE_KEY } from '../../lib/constants';
@@ -63,6 +66,8 @@ const CATEGORY_COLORS: Record<Category, { bg: string; text: string }> = {
   reference: { bg: 'bg-fuchsia-500', text: 'text-fuchsia-500' },
   other: { bg: 'bg-zinc-400', text: 'text-zinc-400' },
 };
+
+const SITES_PER_PAGE = 10;
 
 const CATEGORY_SVG_COLORS: Record<Category, string> = {
   productive: '#10b981',
@@ -382,6 +387,11 @@ export function App() {
   const [settings, setSettings] = useState<Settings>(DEFAULT_SETTINGS);
   const [isLoading, setIsLoading] = useState(true);
   const [hoveredCategory, setHoveredCategory] = useState<Category | null>(null);
+  const [activeCategoryFilters, setActiveCategoryFilters] = useState<
+    Set<Category>
+  >(new Set());
+  const [expandedSite, setExpandedSite] = useState<string | null>(null);
+  const [sitesPage, setSitesPage] = useState(0);
   const [isPending, startTransition] = useTransition();
   const periodRef = useRef<Period>('today');
   const settingsRef = useRef<Settings>(DEFAULT_SETTINGS);
@@ -448,6 +458,15 @@ export function App() {
   const maxDayMs =
     data?.byDate.reduce((max, d) => Math.max(max, d.stats.activeMs), 0) ?? 0;
 
+  const availableCategories = useMemo(() => {
+    if (!data?.topSites) return [];
+    const cats = new Set<Category>();
+    for (const site of data.topSites) {
+      cats.add(getCategoryForHost(site.host, settings.siteCategories));
+    }
+    return CATEGORY_LIST.filter((c) => cats.has(c));
+  }, [data, settings.siteCategories]);
+
   const sortedSites = useMemo(() => {
     if (!data?.topSites) return [];
 
@@ -471,8 +490,19 @@ export function App() {
       }
     };
 
-    return [...data.topSites].sort((a, b) => getSortValue(b) - getSortValue(a));
-  }, [data, sortBy]);
+    let sites = [...data.topSites].sort(
+      (a, b) => getSortValue(b) - getSortValue(a)
+    );
+
+    if (activeCategoryFilters.size > 0) {
+      sites = sites.filter((site) => {
+        const cat = getCategoryForHost(site.host, settings.siteCategories);
+        return activeCategoryFilters.has(cat);
+      });
+    }
+
+    return sites;
+  }, [data, sortBy, activeCategoryFilters, settings.siteCategories]);
 
   const maxSortValue = useMemo(() => {
     if (sortedSites.length === 0) return 0;
@@ -531,6 +561,33 @@ export function App() {
       default:
         return (site.stats.activeMs / maxSortValue) * 100;
     }
+  };
+
+  const totalPages = Math.max(
+    1,
+    Math.ceil(sortedSites.length / SITES_PER_PAGE)
+  );
+
+  const paginatedSites = useMemo(() => {
+    const start = sitesPage * SITES_PER_PAGE;
+    return sortedSites.slice(start, start + SITES_PER_PAGE);
+  }, [sortedSites, sitesPage]);
+
+  useEffect(() => {
+    setSitesPage(0);
+    setExpandedSite(null);
+  }, [sortBy, activeCategoryFilters, period]);
+
+  const toggleCategoryFilter = (category: Category) => {
+    setActiveCategoryFilters((prev) => {
+      const next = new Set(prev);
+      if (next.has(category)) {
+        next.delete(category);
+      } else {
+        next.add(category);
+      }
+      return next;
+    });
   };
 
   if (isLoading && !data) {
@@ -843,43 +900,157 @@ export function App() {
                 <ChevronDown className="text-muted-foreground pointer-events-none absolute right-0 top-1/2 h-3 w-3 -translate-y-1/2" />
               </div>
             </div>
-            {sortedSites.length > 0 ? (
-              <div className="mt-4 space-y-3">
-                {sortedSites.map((site, index) => {
+
+            {availableCategories.length > 1 && (
+              <div className="mt-3 flex flex-wrap gap-1.5">
+                {availableCategories.map((cat) => {
+                  const isActive = activeCategoryFilters.has(cat);
+                  return (
+                    <button
+                      key={cat}
+                      type="button"
+                      className={`inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 text-[11px] font-medium transition-all ${
+                        isActive
+                          ? CATEGORY_COLORS[cat].text
+                          : 'text-muted-foreground hover:text-foreground'
+                      }`}
+                      style={
+                        isActive
+                          ? {
+                              backgroundColor: `${CATEGORY_SVG_COLORS[cat]}15`,
+                            }
+                          : undefined
+                      }
+                      onClick={() => toggleCategoryFilter(cat)}
+                    >
+                      <span
+                        className={`h-2 w-2 rounded-full ${CATEGORY_COLORS[cat].bg}`}
+                        style={{ opacity: isActive ? 1 : 0.5 }}
+                      />
+                      {CATEGORIES[cat].label}
+                    </button>
+                  );
+                })}
+              </div>
+            )}
+
+            {paginatedSites.length > 0 ? (
+              <div className="mt-4 space-y-1">
+                {paginatedSites.map((site, index) => {
                   const pct = getSiteProgress(site);
                   const category = getCategoryForHost(
                     site.host,
                     settings.siteCategories
                   );
+                  const isExpanded = expandedSite === site.key;
                   return (
-                    <div key={site.key} className="space-y-1">
+                    <div
+                      key={site.key}
+                      className="hover:bg-muted/50 -mx-1 cursor-pointer rounded-md px-1 py-1.5 transition-colors"
+                      onClick={() =>
+                        setExpandedSite(isExpanded ? null : site.key)
+                      }
+                      onKeyDown={(e) => {
+                        if (e.key === 'Enter' || e.key === ' ') {
+                          e.preventDefault();
+                          setExpandedSite(isExpanded ? null : site.key);
+                        }
+                      }}
+                      role="button"
+                      tabIndex={0}
+                    >
                       <div className="flex items-center justify-between gap-2 text-sm">
                         <div className="flex min-w-0 items-center gap-2">
                           <span className="text-muted-foreground w-5 shrink-0 text-xs">
-                            {index + 1}.
+                            {sitesPage * SITES_PER_PAGE + index + 1}.
                           </span>
                           <span className="truncate font-medium">
                             {site.host}
                           </span>
-                          <span
-                            className={`flex shrink-0 items-center gap-1 text-[10px] ${CATEGORY_COLORS[category].text}`}
-                          >
-                            <span
-                              className={`h-1.5 w-1.5 rounded-full ${CATEGORY_COLORS[category].bg}`}
-                            />
-                            {CATEGORIES[category].label}
-                          </span>
                         </div>
-                        <span className="text-muted-foreground shrink-0 text-xs">
-                          {formatSortValue(site)}
-                        </span>
+                        <div className="flex shrink-0 items-center gap-2">
+                          <span className="text-muted-foreground text-xs">
+                            {formatSortValue(site)}
+                          </span>
+                          <ChevronDown
+                            className={`text-muted-foreground h-3.5 w-3.5 transition-transform duration-200 ${
+                              isExpanded ? 'rotate-180' : ''
+                            }`}
+                          />
+                        </div>
                       </div>
-                      <div className="ml-7">
+                      <div className="ml-7 mt-1">
                         <div className="bg-muted h-1.5 overflow-hidden rounded-full">
                           <div
-                            className="bg-primary h-full rounded-full transition-all duration-300"
-                            style={{ width: `${pct}%` }}
+                            className="h-full rounded-full transition-all duration-300"
+                            style={{
+                              width: `${pct}%`,
+                              backgroundColor: CATEGORY_SVG_COLORS[category],
+                            }}
                           />
+                        </div>
+                      </div>
+                      <div
+                        className={`overflow-hidden transition-all duration-200 ${
+                          isExpanded
+                            ? 'mt-2 max-h-40 opacity-100'
+                            : 'max-h-0 opacity-0'
+                        }`}
+                      >
+                        <div className="ml-7 grid grid-cols-3 gap-x-4 gap-y-2 pb-1">
+                          <div>
+                            <p className="text-muted-foreground text-[10px]">
+                              Active Time
+                            </p>
+                            <p className="text-xs font-medium">
+                              {formatDuration(site.stats.activeMs)}
+                            </p>
+                          </div>
+                          <div>
+                            <p className="text-muted-foreground text-[10px]">
+                              Visits
+                            </p>
+                            <p className="text-xs font-medium">
+                              {site.stats.visits}
+                            </p>
+                          </div>
+                          <div>
+                            <p className="text-muted-foreground text-[10px]">
+                              Sessions
+                            </p>
+                            <p className="text-xs font-medium">
+                              {site.stats.sessions}
+                            </p>
+                          </div>
+                          <div>
+                            <p className="text-muted-foreground text-[10px]">
+                              Clicks
+                            </p>
+                            <p className="text-xs font-medium">
+                              {site.stats.clicks}
+                            </p>
+                          </div>
+                          <div>
+                            <p className="text-muted-foreground text-[10px]">
+                              Scroll Intensity
+                            </p>
+                            <p className="text-xs font-medium">
+                              {formatScrollIntensity(
+                                getScrollIntensity(
+                                  site.stats.scrollDistance,
+                                  site.stats.activeMs
+                                )
+                              )}
+                            </p>
+                          </div>
+                          <div>
+                            <p className="text-muted-foreground text-[10px]">
+                              Tab Switches
+                            </p>
+                            <p className="text-xs font-medium">
+                              {site.stats.tabSwitches}
+                            </p>
+                          </div>
                         </div>
                       </div>
                     </div>
@@ -888,6 +1059,36 @@ export function App() {
               </div>
             ) : (
               <EmptyState period={period} />
+            )}
+
+            {totalPages > 1 && (
+              <div className="mt-4 flex items-center justify-center gap-3">
+                <button
+                  type="button"
+                  className="text-muted-foreground hover:text-foreground p-1 transition-colors disabled:opacity-30"
+                  disabled={sitesPage === 0}
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    setSitesPage((p) => p - 1);
+                  }}
+                >
+                  <ChevronLeft className="h-4 w-4" />
+                </button>
+                <span className="text-muted-foreground text-xs tabular-nums">
+                  {sitesPage + 1} of {totalPages}
+                </span>
+                <button
+                  type="button"
+                  className="text-muted-foreground hover:text-foreground p-1 transition-colors disabled:opacity-30"
+                  disabled={sitesPage >= totalPages - 1}
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    setSitesPage((p) => p + 1);
+                  }}
+                >
+                  <ChevronRight className="h-4 w-4" />
+                </button>
+              </div>
             )}
           </section>
         </div>

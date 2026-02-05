@@ -172,8 +172,7 @@ export function aggregateByPeriod(
       host,
       stats,
     }))
-    .sort((a, b) => b.stats.activeMs - a.stats.activeMs)
-    .slice(0, 10);
+    .sort((a, b) => b.stats.activeMs - a.stats.activeMs);
 
   const sortedDateKeys = Array.from(dateMap.keys()).sort();
   const displayKeys = isAllTime
