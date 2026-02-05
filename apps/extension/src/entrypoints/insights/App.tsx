@@ -1,11 +1,22 @@
 import {
+  ArrowLeftRight,
+  ChevronDown,
   Clock,
   Eye,
   Globe,
+  MousePointerClick,
+  MoveVertical,
   Settings as SettingsIcon,
   SwatchBook,
 } from 'lucide-react';
-import { useCallback, useEffect, useRef, useState, useTransition } from 'react';
+import {
+  useCallback,
+  useEffect,
+  useMemo,
+  useRef,
+  useState,
+  useTransition,
+} from 'react';
 
 import { STORAGE_KEY } from '../../lib/constants';
 import { formatDuration } from '../../lib/format';
@@ -23,6 +34,33 @@ const PERIODS: { value: Period; label: string }[] = [
   { value: 'all', label: 'All Time' },
 ];
 
+type SortMetric = 'time' | 'clicks' | 'scroll' | 'switches';
+
+const SORT_OPTIONS: { value: SortMetric; label: string; icon: typeof Clock }[] =
+  [
+    { value: 'time', label: 'Active time', icon: Clock },
+    { value: 'clicks', label: 'Clicks', icon: MousePointerClick },
+    { value: 'scroll', label: 'Scroll intensity', icon: MoveVertical },
+    { value: 'switches', label: 'Tab switches', icon: ArrowLeftRight },
+  ];
+
+function getScrollIntensity(
+  scrollDistance: number | undefined,
+  activeMs: number
+): number | null {
+  const distance = scrollDistance ?? 0;
+  const activeMinutes = activeMs / 60000;
+  if (activeMinutes < 0.1) return null;
+  const intensity = distance / activeMinutes;
+  if (!Number.isFinite(intensity)) return null;
+  return intensity;
+}
+
+function formatScrollIntensity(intensity: number | null): string {
+  if (intensity === null) return '–';
+  return intensity.toFixed(1) + '/min';
+}
+
 function EmptyState({ period }: { period: Period }) {
   const message =
     period === 'today'
@@ -34,6 +72,7 @@ function EmptyState({ period }: { period: Period }) {
 
 export function App() {
   const [period, setPeriod] = useState<Period>('today');
+  const [sortBy, setSortBy] = useState<SortMetric>('time');
   const [data, setData] = useState<AggregatedStats | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [isPending, startTransition] = useTransition();
@@ -80,7 +119,91 @@ export function App() {
 
   const maxDayMs =
     data?.byDate.reduce((max, d) => Math.max(max, d.stats.activeMs), 0) ?? 0;
-  const maxSiteMs = data?.topSites[0]?.stats.activeMs ?? 0;
+
+  const sortedSites = useMemo(() => {
+    if (!data?.topSites) return [];
+
+    const getSortValue = (site: (typeof data.topSites)[number]): number => {
+      switch (sortBy) {
+        case 'time':
+          return site.stats.activeMs;
+        case 'clicks':
+          return site.stats.clicks;
+        case 'scroll':
+          return (
+            getScrollIntensity(
+              site.stats.scrollDistance,
+              site.stats.activeMs
+            ) ?? 0
+          );
+        case 'switches':
+          return site.stats.tabSwitches;
+        default:
+          return site.stats.activeMs;
+      }
+    };
+
+    return [...data.topSites].sort((a, b) => getSortValue(b) - getSortValue(a));
+  }, [data, sortBy]);
+
+  const maxSortValue = useMemo(() => {
+    if (sortedSites.length === 0) return 0;
+    const first = sortedSites[0];
+    switch (sortBy) {
+      case 'time':
+        return first.stats.activeMs;
+      case 'clicks':
+        return first.stats.clicks;
+      case 'scroll':
+        return (
+          getScrollIntensity(
+            first.stats.scrollDistance,
+            first.stats.activeMs
+          ) ?? 0
+        );
+      case 'switches':
+        return first.stats.tabSwitches;
+      default:
+        return first.stats.activeMs;
+    }
+  }, [sortedSites, sortBy]);
+
+  const formatSortValue = (site: (typeof sortedSites)[number]): string => {
+    switch (sortBy) {
+      case 'time':
+        return formatDuration(site.stats.activeMs);
+      case 'clicks':
+        return `${site.stats.clicks} clicks`;
+      case 'scroll':
+        return formatScrollIntensity(
+          getScrollIntensity(site.stats.scrollDistance, site.stats.activeMs)
+        );
+      case 'switches':
+        return `${site.stats.tabSwitches} switches`;
+      default:
+        return formatDuration(site.stats.activeMs);
+    }
+  };
+
+  const getSiteProgress = (site: (typeof sortedSites)[number]): number => {
+    if (maxSortValue === 0) return 0;
+    switch (sortBy) {
+      case 'time':
+        return (site.stats.activeMs / maxSortValue) * 100;
+      case 'clicks':
+        return (site.stats.clicks / maxSortValue) * 100;
+      case 'scroll': {
+        const intensity =
+          getScrollIntensity(site.stats.scrollDistance, site.stats.activeMs) ??
+          0;
+        return (intensity / maxSortValue) * 100;
+      }
+      case 'switches':
+        return (site.stats.tabSwitches / maxSortValue) * 100;
+      default:
+        return (site.stats.activeMs / maxSortValue) * 100;
+    }
+  };
 
   if (isLoading && !data) {
     return (
@@ -271,15 +394,27 @@ export function App() {
           </section>
 
           <section className="card">
-            <h2 className="text-sm font-semibold">Top Sites</h2>
-            <p className="text-muted-foreground mt-1 text-xs">
-              Ranked by active time
-            </p>
-            {data && data.topSites.length > 0 ? (
+            <div className="flex items-start justify-between gap-2">
+              <h2 className="text-sm font-semibold">Top Sites</h2>
+              <div className="relative">
+                <select
+                  className="text-muted-foreground hover:text-foreground appearance-none bg-transparent pr-5 text-xs font-medium outline-none transition-colors"
+                  value={sortBy}
+                  onChange={(e) => setSortBy(e.target.value as SortMetric)}
+                >
+                  {SORT_OPTIONS.map((opt) => (
+                    <option key={opt.value} value={opt.value}>
+                      {opt.label}
+                    </option>
+                  ))}
+                </select>
+                <ChevronDown className="text-muted-foreground pointer-events-none absolute right-0 top-1/2 h-3 w-3 -translate-y-1/2" />
+              </div>
+            </div>
+            {sortedSites.length > 0 ? (
               <div className="mt-4 space-y-3">
-                {data.topSites.map((site, index) => {
-                  const pct =
-                    maxSiteMs > 0 ? (site.stats.activeMs / maxSiteMs) * 100 : 0;
+                {sortedSites.map((site, index) => {
+                  const pct = getSiteProgress(site);
                   return (
                     <div key={site.key} className="space-y-1">
                       <div className="flex items-center justify-between gap-2 text-sm">
@@ -291,15 +426,14 @@ export function App() {
                             {site.host}
                           </span>
                         </div>
-                        <div className="text-muted-foreground flex shrink-0 items-center gap-3 text-xs">
-                          <span>{formatDuration(site.stats.activeMs)}</span>
-                          <span>{site.stats.visits}v</span>
-                        </div>
+                        <span className="text-muted-foreground shrink-0 text-xs">
+                          {formatSortValue(site)}
+                        </span>
                       </div>
                       <div className="ml-7">
                         <div className="bg-muted h-1.5 overflow-hidden rounded-full">
                           <div
-                            className="bg-primary/60 h-full rounded-full transition-all duration-300"
+                            className="bg-primary h-full rounded-full transition-all duration-300"
                             style={{ width: `${pct}%` }}
                           />
                         </div>
