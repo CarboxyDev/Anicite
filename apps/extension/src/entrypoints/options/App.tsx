@@ -230,6 +230,7 @@ export function App() {
     setIsClearing(true);
     try {
       await clearStore();
+      setTrackedSites([]);
       setClearSuccess(true);
       setTimeout(() => setClearSuccess(false), 3000);
     } finally {
