@@ -1,4 +1,4 @@
-import { ChevronDown, Search } from 'lucide-react';
+import { ChevronDown, Download, Search } from 'lucide-react';
 import { useEffect, useMemo, useState } from 'react';
 
 import {
@@ -7,7 +7,7 @@ import {
   CATEGORY_LIST,
   getCategoryForHost,
 } from '../../lib/categories';
-import { SETTINGS_KEY, STORAGE_KEY } from '../../lib/constants';
+import { SETTINGS_KEY, STORAGE_KEY, STORE_VERSION } from '../../lib/constants';
 import {
   DEFAULT_SETTINGS,
   isValidHost,
@@ -20,8 +20,92 @@ import {
   getSettings,
   getStore,
   type PageStats,
+  type Store,
   updateSettings,
 } from '../../lib/storage';
+
+type ExportFormat = 'json' | 'csv';
+type ExportDateRange = 'all' | '7d' | '30d' | '90d';
+
+const DATE_RANGE_LABELS: Record<ExportDateRange, string> = {
+  all: 'All time',
+  '7d': 'Last 7 days',
+  '30d': 'Last 30 days',
+  '90d': 'Last 90 days',
+};
+
+function getDateRangeFilter(range: ExportDateRange): (date: string) => boolean {
+  if (range === 'all') return () => true;
+
+  const days = range === '7d' ? 7 : range === '30d' ? 30 : 90;
+  const cutoff = new Date();
+  cutoff.setDate(cutoff.getDate() - days);
+  cutoff.setHours(0, 0, 0, 0);
+  const cutoffStr = cutoff.toISOString().split('T')[0];
+
+  return (date: string) => date >= cutoffStr;
+}
+
+function convertToCSV(
+  store: Store,
+  settings: Settings,
+  dateFilter: (date: string) => boolean
+): string {
+  const headers = [
+    'host',
+    'path',
+    'category',
+    'date',
+    'visits',
+    'sessions',
+    'activeMs',
+    'activeMinutes',
+    'clicks',
+    'scrollDistance',
+    'tabSwitches',
+  ];
+
+  const rows: string[][] = [];
+
+  for (const page of Object.values(store.pages)) {
+    const category = getCategoryForHost(page.host, settings.siteCategories);
+
+    for (const [date, stats] of Object.entries(page.byDate)) {
+      if (!dateFilter(date)) continue;
+      rows.push([
+        page.host,
+        page.path ?? '',
+        category,
+        date,
+        String(stats.visits),
+        String(stats.sessions),
+        String(stats.activeMs),
+        String(Math.round(stats.activeMs / 60000)),
+        String(stats.clicks),
+        String(stats.scrollDistance),
+        String(stats.tabSwitches),
+      ]);
+    }
+  }
+
+  rows.sort((a, b) => {
+    const dateCompare = b[3].localeCompare(a[3]);
+    if (dateCompare !== 0) return dateCompare;
+    return Number(b[6]) - Number(a[6]);
+  });
+
+  const escape = (val: string) => {
+    if (val.includes(',') || val.includes('"') || val.includes('\n')) {
+      return `"${val.replace(/"/g, '""')}"`;
+    }
+    return val;
+  };
+
+  return [
+    headers.join(','),
+    ...rows.map((row) => row.map(escape).join(',')),
+  ].join('\n');
+}
 
 const CATEGORY_COLORS: Record<Category, { bg: string; text: string }> = {
   productive: { bg: 'bg-emerald-500', text: 'text-emerald-500' },
@@ -41,6 +125,10 @@ export function App() {
   const [showClearConfirm, setShowClearConfirm] = useState(false);
   const [isClearing, setIsClearing] = useState(false);
   const [clearSuccess, setClearSuccess] = useState(false);
+  const [isExporting, setIsExporting] = useState(false);
+  const [exportDateRange, setExportDateRange] =
+    useState<ExportDateRange>('all');
+  const [exportSuccess, setExportSuccess] = useState<ExportFormat | null>(null);
   const [isLoading, setIsLoading] = useState(true);
 
   const filteredSites = useMemo(() => {
@@ -167,6 +255,71 @@ export function App() {
   const handleResetCategories = async () => {
     const next = await updateSettings({ siteCategories: {} });
     setSettings(next);
+  };
+
+  const handleExportData = async (format: ExportFormat) => {
+    setIsExporting(true);
+    try {
+      const [store, currentSettings] = await Promise.all([
+        getStore(),
+        getSettings(),
+      ]);
+
+      const dateFilter = getDateRangeFilter(exportDateRange);
+      const dateStr = new Date().toISOString().split('T')[0];
+      const rangeSuffix =
+        exportDateRange === 'all' ? '' : `-${exportDateRange}`;
+      let blob: Blob;
+      let filename: string;
+
+      if (format === 'csv') {
+        const csv = convertToCSV(store, currentSettings, dateFilter);
+        blob = new Blob([csv], { type: 'text/csv' });
+        filename = `anicite-export-${dateStr}${rangeSuffix}.csv`;
+      } else {
+        const filteredPages: typeof store.pages = {};
+        for (const [key, page] of Object.entries(store.pages)) {
+          const filteredByDate: typeof page.byDate = {};
+          for (const [date, stats] of Object.entries(page.byDate)) {
+            if (dateFilter(date)) {
+              filteredByDate[date] = stats;
+            }
+          }
+          if (Object.keys(filteredByDate).length > 0) {
+            filteredPages[key] = { ...page, byDate: filteredByDate };
+          }
+        }
+
+        const exportData = {
+          meta: {
+            exportedAt: new Date().toISOString(),
+            version: STORE_VERSION,
+            sitesCount: Object.keys(filteredPages).length,
+            dateRange: exportDateRange,
+          },
+          settings: currentSettings,
+          data: { ...store, pages: filteredPages },
+        };
+        blob = new Blob([JSON.stringify(exportData, null, 2)], {
+          type: 'application/json',
+        });
+        filename = `anicite-export-${dateStr}${rangeSuffix}.json`;
+      }
+
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = filename;
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      URL.revokeObjectURL(url);
+
+      setExportSuccess(format);
+      setTimeout(() => setExportSuccess(null), 3000);
+    } finally {
+      setIsExporting(false);
+    }
   };
 
   if (isLoading) {
@@ -413,28 +566,64 @@ export function App() {
           </section>
 
           <section className="card">
-            <div>
-              <h2 className="font-semibold">Data</h2>
-              <p className="text-muted-foreground mt-1 text-xs">
-                Manage your locally stored browsing data.
-              </p>
+            <div className="flex items-start justify-between gap-4">
+              <div>
+                <h2 className="font-semibold">Data</h2>
+                <p className="text-muted-foreground mt-1 text-xs">
+                  Manage your locally stored browsing data.
+                </p>
+              </div>
+              <div className="relative shrink-0">
+                <select
+                  className="input appearance-none pr-8"
+                  value={exportDateRange}
+                  onChange={(e) =>
+                    setExportDateRange(e.target.value as ExportDateRange)
+                  }
+                >
+                  {(
+                    Object.entries(DATE_RANGE_LABELS) as [
+                      ExportDateRange,
+                      string,
+                    ][]
+                  ).map(([value, label]) => (
+                    <option key={value} value={value}>
+                      {label}
+                    </option>
+                  ))}
+                </select>
+                <ChevronDown className="text-muted-foreground pointer-events-none absolute right-2 top-1/2 h-4 w-4 -translate-y-1/2" />
+              </div>
             </div>
 
-            <div className="mt-4 flex items-center justify-between">
+            <div className="mt-6 flex flex-wrap items-center gap-3">
               <button
-                className="text-primary text-sm hover:underline"
-                onClick={() =>
-                  chrome.tabs.create({
-                    url: chrome.runtime.getURL('insights.html'),
-                  })
-                }
+                className="btn btn-outline flex items-center gap-2"
+                onClick={() => void handleExportData('json')}
+                disabled={isExporting}
                 type="button"
               >
-                View Insights →
+                <Download className="h-4 w-4" />
+                {isExporting ? 'Exporting...' : 'Export JSON'}
+              </button>
+              <button
+                className="btn btn-outline flex items-center gap-2"
+                onClick={() => void handleExportData('csv')}
+                disabled={isExporting}
+                type="button"
+              >
+                <Download className="h-4 w-4" />
+                {isExporting ? 'Exporting...' : 'Export CSV'}
               </button>
             </div>
 
-            <div className="mt-4">
+            {exportSuccess && (
+              <p className="text-success mt-3 text-xs">
+                Data exported as {exportSuccess.toUpperCase()} successfully.
+              </p>
+            )}
+
+            <div className="border-border mt-6 border-t pt-6">
               {showClearConfirm ? (
                 <div className="space-y-3">
                   <p className="text-destructive text-sm">
@@ -461,7 +650,7 @@ export function App() {
                 </div>
               ) : (
                 <button
-                  className="btn btn-outline"
+                  className="btn btn-destructive"
                   onClick={() => setShowClearConfirm(true)}
                   type="button"
                 >
