@@ -73,11 +73,26 @@ const CATEGORY_SVG_COLORS: Record<Category, string> = {
   other: '#a1a1aa',
 };
 
-function DonutChart({ data }: { data: CategoryStats[] }) {
-  const size = 120;
-  const strokeWidth = 24;
+function DonutChart({
+  data,
+  hoveredCategory,
+  onHover,
+}: {
+  data: CategoryStats[];
+  hoveredCategory: Category | null;
+  onHover: (category: Category | null) => void;
+}) {
+  const size = 160;
+  const strokeWidth = 20;
   const radius = (size - strokeWidth) / 2;
   const circumference = 2 * Math.PI * radius;
+
+  // Find the largest category for center display
+  const largestCategory = data.length > 0 ? data[0] : null;
+  const displayCategory =
+    hoveredCategory !== null
+      ? data.find((d) => d.category === hoveredCategory)
+      : largestCategory;
 
   const segments = useMemo(() => {
     const result: {
@@ -88,46 +103,89 @@ function DonutChart({ data }: { data: CategoryStats[] }) {
     }[] = [];
     let currentOffset = 0;
 
+    // Add small gaps between segments
+    const gapAngle = data.length > 1 ? 3 : 0; // degrees
+    const gapLength = (gapAngle / 360) * circumference;
+    const totalGaps = data.length * gapLength;
+    const availableCircumference = circumference - totalGaps;
+
     for (const item of data) {
-      const length = (item.percentage / 100) * circumference;
+      const length = (item.percentage / 100) * availableCircumference;
       result.push({
         category: item.category,
         length,
         offset: currentOffset,
         color: CATEGORY_SVG_COLORS[item.category],
       });
-      currentOffset += length;
+      currentOffset += length + gapLength;
     }
 
     return result;
   }, [data, circumference]);
 
   return (
-    <svg width={size} height={size} className="shrink-0 -rotate-90">
-      <circle
-        cx={size / 2}
-        cy={size / 2}
-        r={radius}
-        fill="none"
-        stroke="currentColor"
-        strokeWidth={strokeWidth}
-        className="text-muted"
-      />
-      {segments.map((seg) => (
+    <div className="relative p-2">
+      <svg
+        width={size}
+        height={size}
+        className="shrink-0 -rotate-90 overflow-visible"
+        style={{ overflow: 'visible' }}
+      >
+        {/* Background track */}
         <circle
-          key={seg.category}
           cx={size / 2}
           cy={size / 2}
           r={radius}
           fill="none"
-          stroke={seg.color}
+          stroke="currentColor"
           strokeWidth={strokeWidth}
-          strokeDasharray={`${seg.length} ${circumference - seg.length}`}
-          strokeDashoffset={-seg.offset}
-          className="transition-all duration-300"
+          className="text-muted/30"
         />
-      ))}
-    </svg>
+        {/* Segments */}
+        {segments.map((seg) => {
+          const isHovered = hoveredCategory === seg.category;
+          const isOtherHovered =
+            hoveredCategory !== null && hoveredCategory !== seg.category;
+          return (
+            <circle
+              key={seg.category}
+              cx={size / 2}
+              cy={size / 2}
+              r={radius}
+              fill="none"
+              stroke={seg.color}
+              strokeWidth={isHovered ? strokeWidth + 4 : strokeWidth}
+              strokeDasharray={`${seg.length} ${circumference - seg.length}`}
+              strokeDashoffset={-seg.offset}
+              strokeLinecap="round"
+              className="cursor-pointer transition-all duration-200"
+              style={{
+                opacity: isOtherHovered ? 0.4 : 1,
+                filter: isHovered
+                  ? `drop-shadow(0 0 8px ${seg.color}60)`
+                  : 'none',
+              }}
+              onMouseEnter={() => onHover(seg.category)}
+              onMouseLeave={() => onHover(null)}
+            />
+          );
+        })}
+      </svg>
+      {/* Center label */}
+      {displayCategory && (
+        <div className="pointer-events-none absolute inset-2 flex flex-col items-center justify-center">
+          <span
+            className="text-2xl font-bold tabular-nums"
+            style={{ color: CATEGORY_SVG_COLORS[displayCategory.category] }}
+          >
+            {displayCategory.percentage.toFixed(0)}%
+          </span>
+          <span className="text-muted-foreground text-[10px] font-medium uppercase tracking-wide">
+            {CATEGORIES[displayCategory.category].label}
+          </span>
+        </div>
+      )}
+    </div>
   );
 }
 
@@ -323,6 +381,7 @@ export function App() {
   const [hourlyData, setHourlyData] = useState<HourlyPatternData | null>(null);
   const [settings, setSettings] = useState<Settings>(DEFAULT_SETTINGS);
   const [isLoading, setIsLoading] = useState(true);
+  const [hoveredCategory, setHoveredCategory] = useState<Category | null>(null);
   const [isPending, startTransition] = useTransition();
   const periodRef = useRef<Period>('today');
   const settingsRef = useRef<Settings>(DEFAULT_SETTINGS);
@@ -644,28 +703,70 @@ export function App() {
               <p className="text-muted-foreground mt-1 text-xs">
                 Activity breakdown by site category
               </p>
-              <div className="mt-4 flex items-start gap-6">
-                <DonutChart data={categoryStats} />
-                <div className="flex-1 space-y-2">
-                  {categoryStats.map((cat) => (
-                    <div
-                      key={cat.category}
-                      className="flex items-center gap-2 text-xs"
-                    >
-                      <span
-                        className={`h-2.5 w-2.5 shrink-0 rounded-full ${CATEGORY_COLORS[cat.category].bg}`}
-                      />
-                      <span className="min-w-[80px] font-medium">
-                        {CATEGORIES[cat.category].label}
-                      </span>
-                      <span className="text-muted-foreground">
-                        {cat.percentage.toFixed(0)}%
-                      </span>
-                      <span className="text-muted-foreground ml-auto">
-                        {formatDuration(cat.stats.activeMs)}
-                      </span>
-                    </div>
-                  ))}
+              <div className="mt-6 flex flex-col items-center gap-6 sm:flex-row sm:items-start sm:justify-center">
+                {/* Donut Chart */}
+                <div className="flex-shrink-0">
+                  <DonutChart
+                    data={categoryStats}
+                    hoveredCategory={hoveredCategory}
+                    onHover={setHoveredCategory}
+                  />
+                </div>
+                {/* Legend */}
+                <div className="w-full max-w-[280px] space-y-3">
+                  {categoryStats.map((cat) => {
+                    const isHovered = hoveredCategory === cat.category;
+                    const isOtherHovered =
+                      hoveredCategory !== null &&
+                      hoveredCategory !== cat.category;
+                    return (
+                      <div
+                        key={cat.category}
+                        className="group cursor-pointer rounded-lg px-3 py-2 transition-all duration-200"
+                        style={{
+                          backgroundColor: isHovered
+                            ? `${CATEGORY_SVG_COLORS[cat.category]}15`
+                            : 'transparent',
+                          opacity: isOtherHovered ? 0.5 : 1,
+                        }}
+                        onMouseEnter={() => setHoveredCategory(cat.category)}
+                        onMouseLeave={() => setHoveredCategory(null)}
+                      >
+                        <div className="flex items-center justify-between gap-3">
+                          <div className="flex items-center gap-2">
+                            <span
+                              className="h-3 w-3 shrink-0 rounded-full transition-transform duration-200"
+                              style={{
+                                backgroundColor:
+                                  CATEGORY_SVG_COLORS[cat.category],
+                                transform: isHovered
+                                  ? 'scale(1.2)'
+                                  : 'scale(1)',
+                              }}
+                            />
+                            <span className="text-sm font-medium">
+                              {CATEGORIES[cat.category].label}
+                            </span>
+                          </div>
+                          <span className="text-muted-foreground text-xs font-medium">
+                            {formatDuration(cat.stats.activeMs)}
+                          </span>
+                        </div>
+                        {/* Mini progress bar */}
+                        <div className="mt-1.5 h-1 overflow-hidden rounded-full bg-white/5">
+                          <div
+                            className="h-full rounded-full transition-all duration-300"
+                            style={{
+                              width: `${cat.percentage}%`,
+                              backgroundColor:
+                                CATEGORY_SVG_COLORS[cat.category],
+                              opacity: isHovered ? 1 : 0.7,
+                            }}
+                          />
+                        </div>
+                      </div>
+                    );
+                  })}
                 </div>
               </div>
             </section>
