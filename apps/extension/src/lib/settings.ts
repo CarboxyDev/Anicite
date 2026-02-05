@@ -22,7 +22,7 @@ export type Settings = {
 export const DEFAULT_SETTINGS: Settings = {
   enabled: true,
   excludeHosts: [],
-  dataGranularity: 'host',
+  dataGranularity: 'path',
   trackingMode: 'focused',
   onboarding: {
     consentConfirmed: false,

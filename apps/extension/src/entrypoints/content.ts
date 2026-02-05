@@ -37,13 +37,14 @@ const contentScript: ContentScriptDefinition = defineContentScript({
     let trackingMode = settings.trackingMode;
     const dataGranularity = settings.dataGranularity;
 
-    const urlParts = getUrlParts(window.location.href, dataGranularity);
+    let urlParts = getUrlParts(window.location.href, dataGranularity);
 
     if (!enabled || isHostExcluded(urlParts.host, excludeHosts)) return;
 
     let stopped = false;
     let intervalId: number | undefined;
     let flushInProgress = false;
+    let navigationInProgress = false;
 
     let activeMs = 0;
     let windowFocused = document.hasFocus();
@@ -84,6 +85,19 @@ const contentScript: ContentScriptDefinition = defineContentScript({
 
       if (flushInProgress && !isUnload) return;
       flushInProgress = true;
+
+      // Fallback URL change detection for browsers without Navigation API
+      if (!navigationInProgress && !isUnload) {
+        const currentUrlParts = getUrlParts(
+          window.location.href,
+          dataGranularity
+        );
+        if (currentUrlParts.key !== urlParts.key) {
+          flushInProgress = false;
+          void handleUrlChange();
+          return;
+        }
+      }
 
       if (!enabled || isHostExcluded(urlParts.host, excludeHosts)) {
         flushInProgress = false;
@@ -222,6 +236,68 @@ const contentScript: ContentScriptDefinition = defineContentScript({
       lastFlushedTabSwitches = 0;
     };
 
+    const handleUrlChange = async () => {
+      if (stopped || navigationInProgress) return;
+
+      const newUrlParts = getUrlParts(window.location.href, dataGranularity);
+
+      if (newUrlParts.key === urlParts.key) return;
+
+      navigationInProgress = true;
+
+      try {
+        if (lastActiveAt) {
+          activeMs += Date.now() - lastActiveAt;
+          lastActiveAt = null;
+        }
+        await flush();
+
+        urlParts = newUrlParts;
+        resetMetrics();
+
+        if (!enabled || isHostExcluded(newUrlParts.host, excludeHosts)) {
+          return;
+        }
+
+        if (
+          document.visibilityState === 'visible' &&
+          (trackingMode === 'visible' || windowFocused)
+        ) {
+          lastActiveAt = Date.now();
+        }
+
+        let store;
+        try {
+          store = await getStore();
+        } catch {
+          store = null;
+        }
+
+        const existingPage = store?.pages[newUrlParts.key];
+        const now = Date.now();
+        const isNewSession =
+          !existingPage || now - existingPage.lastSeenAt > SESSION_GAP_MS;
+
+        try {
+          await sendUpdateStats({
+            key: newUrlParts.key,
+            url: newUrlParts.url,
+            host: newUrlParts.host,
+            path: newUrlParts.path,
+            dateKey: getLocalDateKey(),
+            delta: {
+              visits: 1,
+              sessions: isNewSession ? 1 : 0,
+            },
+          });
+        } catch {
+          // Failed to record visit for new URL
+        }
+      } finally {
+        navigationInProgress = false;
+      }
+    };
+
     const handleStorageChange = (
       changes: { [key: string]: chrome.storage.StorageChange },
       areaName: string
@@ -271,6 +347,22 @@ const contentScript: ContentScriptDefinition = defineContentScript({
     });
 
     window.addEventListener('scroll', updateScrollDistance, { passive: true });
+
+    // SPA navigation detection via Navigation API (Chrome 102+)
+    // Use 'currententrychange' which fires for all same-document navigations
+    // including pushState/replaceState (unlike 'navigatesuccess' which only
+    // fires for full navigations)
+    const nav = (globalThis as { navigation?: EventTarget }).navigation;
+    if (nav && typeof nav.addEventListener === 'function') {
+      nav.addEventListener('currententrychange', () => {
+        void handleUrlChange();
+      });
+    }
+
+    // Fallback: popstate for back/forward navigation
+    window.addEventListener('popstate', () => {
+      void handleUrlChange();
+    });
 
     intervalId = window.setInterval(() => {
       void flush();
