@@ -754,7 +754,7 @@ export function App() {
             </div>
           </section>
 
-          {categoryStats.length > 0 && (
+          {categoryStats.length > 1 && (
             <section className="card">
               <h2 className="text-sm font-semibold">Time by Category</h2>
               <p className="text-muted-foreground mt-1 text-xs">
@@ -846,41 +846,43 @@ export function App() {
               ))}
           </section>
 
-          <section className="card">
-            <h2 className="text-sm font-semibold">Daily Activity</h2>
-            <p className="text-muted-foreground mt-1 text-xs">
-              Active time per day
-            </p>
-            {data && data.byDate.length > 0 ? (
-              <div className="mt-4 space-y-2">
-                {data.byDate.map((day) => {
-                  const pct =
-                    maxDayMs > 0 ? (day.stats.activeMs / maxDayMs) * 100 : 0;
-                  return (
-                    <div
-                      key={day.date}
-                      className="flex items-center gap-3 text-xs"
-                    >
-                      <span className="text-muted-foreground w-10 shrink-0">
-                        {day.label}
-                      </span>
-                      <div className="bg-muted h-5 flex-1 overflow-hidden rounded">
-                        <div
-                          className="bg-primary h-full rounded transition-all duration-300"
-                          style={{ width: `${pct}%` }}
-                        />
+          {period !== 'today' && (
+            <section className="card">
+              <h2 className="text-sm font-semibold">Daily Activity</h2>
+              <p className="text-muted-foreground mt-1 text-xs">
+                Active time per day
+              </p>
+              {data && data.byDate.length > 0 ? (
+                <div className="mt-4 space-y-2">
+                  {data.byDate.map((day) => {
+                    const pct =
+                      maxDayMs > 0 ? (day.stats.activeMs / maxDayMs) * 100 : 0;
+                    return (
+                      <div
+                        key={day.date}
+                        className="flex items-center gap-3 text-xs"
+                      >
+                        <span className="text-muted-foreground w-10 shrink-0">
+                          {day.label}
+                        </span>
+                        <div className="bg-muted h-5 flex-1 overflow-hidden rounded">
+                          <div
+                            className="bg-primary h-full rounded transition-all duration-300"
+                            style={{ width: `${pct}%` }}
+                          />
+                        </div>
+                        <span className="w-14 shrink-0 text-right font-medium">
+                          {formatDuration(day.stats.activeMs)}
+                        </span>
                       </div>
-                      <span className="w-14 shrink-0 text-right font-medium">
-                        {formatDuration(day.stats.activeMs)}
-                      </span>
-                    </div>
-                  );
-                })}
-              </div>
-            ) : (
-              <EmptyState period={period} />
-            )}
-          </section>
+                    );
+                  })}
+                </div>
+              ) : (
+                <EmptyState period={period} />
+              )}
+            </section>
+          )}
 
           <section className="card">
             <div className="flex items-start justify-between gap-2">
