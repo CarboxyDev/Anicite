@@ -67,7 +67,7 @@
 
 **Permissions**
 
-- `storage`, `tabs`, and `host_permissions` for `<all_urls>`.
+- `storage`, `tabs`, and `host_permissions` for `http://*/*` and `https://*/*`.
 - Rationale: needed for local storage and tab URL tracking.
 
 **Success Metrics**

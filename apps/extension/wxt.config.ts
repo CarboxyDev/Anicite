@@ -9,7 +9,7 @@ export default defineConfig({
     description: 'Chrome analytics done right',
     manifest_version: 3,
     permissions: ['storage', 'tabs'],
-    host_permissions: ['<all_urls>'],
+    host_permissions: ['http://*/*', 'https://*/*'],
     action: {
       default_title: 'Anicite',
       default_popup: 'popup/index.html',

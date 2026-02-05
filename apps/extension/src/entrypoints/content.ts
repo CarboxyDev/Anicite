@@ -17,7 +17,7 @@ function isContextValid(): boolean {
 }
 
 const contentScript: ContentScriptDefinition = defineContentScript({
-  matches: ['<all_urls>'],
+  matches: ['http://*/*', 'https://*/*'],
   runAt: 'document_idle',
   async main() {
     if (!isContextValid()) return;
