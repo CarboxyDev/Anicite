@@ -35,9 +35,6 @@ The Project Requirements are in `docs/PRD.md`
 pnpm dev
 pnpm build
 pnpm typecheck
-pnpm test
-pnpm test:unit
-pnpm test:integration
 pnpm lint
 ```
 
@@ -106,10 +103,6 @@ pnpm db:seed          # Seed database
 - The codebase emphasizes runtime and compile-time type safety with **Zod v4 as the single validation library** across the entire stack
 - No class-validator
 
-### Testing
-
-Unit Tests: `*.spec.ts`
-Integration Tests: `*.integration.spec.ts`
 
 ### Authentication
 

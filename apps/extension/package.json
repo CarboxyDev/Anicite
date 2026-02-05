@@ -11,6 +11,7 @@
     "lint:fix": "eslint src wxt.config.ts tailwind.config.ts --fix"
   },
   "dependencies": {
+    "@fontsource/plus-jakarta-sans": "^5.2.8",
     "lucide-react": "^0.545.0",
     "react": "19.2.1",
     "react-dom": "19.2.1"

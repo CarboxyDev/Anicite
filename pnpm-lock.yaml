@@ -230,6 +230,9 @@ importers:
 
   apps/extension:
     dependencies:
+      '@fontsource/plus-jakarta-sans':
+        specifier: ^5.2.8
+        version: 5.2.8
       lucide-react:
         specifier: ^0.545.0
         version: 0.545.0(react@19.2.1)
@@ -1592,6 +1595,12 @@ packages:
     resolution:
       {
         integrity: sha512-aGTxbpbg8/b5JfU1HXSrbH3wXZuLPJcNEcZQFMxLs3oSzgtVu6nFPkbbGGUvBcUjKV2YyB9Wxxabo+HEH9tcRQ==,
+      }
+
+  '@fontsource/plus-jakarta-sans@5.2.8':
+    resolution:
+      {
+        integrity: sha512-P5qE49fqdeD+7DXH1KBxmMPlB17LTz1zvBhFH0tFzfnYTKVJVyb0pR6plh0ZGXxcB+Oayb54FZZw3V42/DawTw==,
       }
 
   '@hono/node-server@1.19.6':
@@ -11804,6 +11813,8 @@ snapshots:
       react-dom: 19.2.1(react@19.2.1)
 
   '@floating-ui/utils@0.2.10': {}
+
+  '@fontsource/plus-jakarta-sans@5.2.8': {}
 
   '@hono/node-server@1.19.6(hono@4.10.6)':
     dependencies:
