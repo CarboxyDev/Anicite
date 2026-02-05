@@ -27,6 +27,7 @@ import {
   getCategoryForHost,
 } from '../../lib/categories';
 import { SETTINGS_KEY, STORAGE_KEY } from '../../lib/constants';
+import { getLocalDateKey } from '../../lib/date';
 import { formatDuration } from '../../lib/format';
 import {
   aggregateByCategory,
@@ -263,6 +264,7 @@ function HeatmapCell({
 
 function TodayHourlyChart({ data }: { data: HourlyPatternData }) {
   const today = new Date().getDay();
+  const currentHour = new Date().getHours();
   const todayRow = data.grid[today];
 
   if (!data.hasData) {
@@ -305,7 +307,16 @@ function TodayHourlyChart({ data }: { data: HourlyPatternData }) {
           );
         })}
       </div>
-      <div className="text-muted-foreground mt-2 flex justify-between text-[10px]">
+      <div className="mt-1 flex gap-[2px]">
+        {todayRow.map((_, i) => (
+          <div key={i} className="flex flex-1 justify-center">
+            {i === currentHour && (
+              <div className="bg-primary h-1 w-1 rounded-full" />
+            )}
+          </div>
+        ))}
+      </div>
+      <div className="text-muted-foreground mt-1 flex justify-between text-[10px]">
         <span>12am</span>
         <span>6am</span>
         <span>12pm</span>
@@ -454,6 +465,8 @@ export function App() {
       setPeriod(newPeriod);
     });
   };
+
+  const todayKey = getLocalDateKey();
 
   const maxDayMs =
     data?.byDate.reduce((max, d) => Math.max(max, d.stats.activeMs), 0) ?? 0;
@@ -857,21 +870,26 @@ export function App() {
                   {data.byDate.map((day) => {
                     const pct =
                       maxDayMs > 0 ? (day.stats.activeMs / maxDayMs) * 100 : 0;
+                    const isToday = day.date === todayKey;
                     return (
                       <div
                         key={day.date}
                         className="flex items-center gap-3 text-xs"
                       >
-                        <span className="text-muted-foreground w-10 shrink-0">
+                        <span
+                          className={`w-10 shrink-0 ${isToday ? 'text-primary font-semibold' : 'text-muted-foreground'}`}
+                        >
                           {day.label}
                         </span>
                         <div className="bg-muted h-5 flex-1 overflow-hidden rounded">
                           <div
-                            className="bg-primary h-full rounded transition-all duration-300"
+                            className={`h-full rounded transition-all duration-300 ${isToday ? 'bg-primary' : 'bg-primary/60'}`}
                             style={{ width: `${pct}%` }}
                           />
                         </div>
-                        <span className="w-14 shrink-0 text-right font-medium">
+                        <span
+                          className={`w-14 shrink-0 text-right font-medium ${isToday ? 'text-primary' : ''}`}
+                        >
                           {formatDuration(day.stats.activeMs)}
                         </span>
                       </div>
