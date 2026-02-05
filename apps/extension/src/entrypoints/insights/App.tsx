@@ -617,7 +617,7 @@ export function App() {
               <div className="bg-muted h-9 w-9 animate-pulse rounded-md" />
             </div>
           </header>
-          <div className="mb-6 flex gap-1">
+          <div className="mb-6 flex gap-2">
             {PERIODS.map((p) => (
               <div
                 key={p.value}

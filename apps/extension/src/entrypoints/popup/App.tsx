@@ -200,14 +200,14 @@ export function App() {
         currentWindow: true,
       });
 
+      const store = await getStore();
+      updateFromStore(store);
+
       if (tab?.url && tab.id) {
         const urlParts = getUrlParts(tab.url, storedSettings.dataGranularity);
         setCurrentHost(urlParts.host);
         setCurrentKey(urlParts.key);
         currentKeyRef.current = urlParts.key;
-
-        const store = await getStore();
-        updateFromStore(store);
       }
 
       setIsLoading(false);
