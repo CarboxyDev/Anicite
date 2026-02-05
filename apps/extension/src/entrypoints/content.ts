@@ -208,6 +208,20 @@ const contentScript: ContentScriptDefinition = defineContentScript({
       }
     };
 
+    const resetMetrics = () => {
+      if (lastActiveAt) {
+        lastActiveAt = null;
+      }
+      activeMs = 0;
+      clicks = 0;
+      scrollDistance = 0;
+      tabSwitches = 0;
+      lastFlushedActiveMs = 0;
+      lastFlushedClicks = 0;
+      lastFlushedScrollDistance = 0;
+      lastFlushedTabSwitches = 0;
+    };
+
     const handleStorageChange = (
       changes: { [key: string]: chrome.storage.StorageChange },
       areaName: string
@@ -215,8 +229,28 @@ const contentScript: ContentScriptDefinition = defineContentScript({
       if (stopped || areaName !== 'local') return;
       const next = changes[SETTINGS_KEY]?.newValue;
       if (!next) return;
-      enabled = Boolean(next.enabled);
-      excludeHosts = next.excludeHosts ?? [];
+
+      const newEnabled = Boolean(next.enabled);
+      const newExcludeHosts = next.excludeHosts ?? [];
+      const wasExcluded =
+        !enabled || isHostExcluded(urlParts.host, excludeHosts);
+      const isNowExcluded =
+        !newEnabled || isHostExcluded(urlParts.host, newExcludeHosts);
+
+      if (isNowExcluded && !wasExcluded) {
+        resetMetrics();
+      } else if (!isNowExcluded && wasExcluded) {
+        resetMetrics();
+        if (
+          document.visibilityState === 'visible' &&
+          (next.trackingMode === 'visible' || windowFocused)
+        ) {
+          lastActiveAt = Date.now();
+        }
+      }
+
+      enabled = newEnabled;
+      excludeHosts = newExcludeHosts;
       trackingMode = next.trackingMode ?? 'focused';
     };
 
