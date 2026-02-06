@@ -9,6 +9,7 @@ import {
   Search,
   Server,
   Shield,
+  Trash2,
 } from 'lucide-react';
 import { useEffect, useMemo, useState } from 'react';
 
@@ -31,6 +32,7 @@ import {
 import {
   aggregateByHost,
   clearStore,
+  deleteOlderThan,
   getSettings,
   getStorageUsage,
   getStore,
@@ -153,6 +155,10 @@ export function App() {
   const [exportSuccess, setExportSuccess] = useState<ExportFormat | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [storageUsage, setStorageUsage] = useState<StorageUsage | null>(null);
+
+  const [pruneDays, setPruneDays] = useState('30');
+  const [isPruning, setIsPruning] = useState(false);
+  const [pruneSuccess, setPruneSuccess] = useState<string | null>(null);
 
   const filteredSites = useMemo(() => {
     const search = categorySearch.toLowerCase().trim();
@@ -349,6 +355,34 @@ export function App() {
       setTimeout(() => setExportSuccess(null), 3000);
     } finally {
       setIsExporting(false);
+    }
+  };
+
+  const handlePruneData = async () => {
+    if (
+      !window.confirm(
+        `Are you sure you want to delete all data older than ${pruneDays} days? This cannot be undone.`
+      )
+    ) {
+      return;
+    }
+
+    setIsPruning(true);
+    try {
+      const days = parseInt(pruneDays, 10);
+      const count = await deleteOlderThan(days);
+      const store = await getStore();
+      const sites = aggregateByHost(store.pages);
+      setTrackedSites(sites);
+      const usage = await getStorageUsage();
+      setStorageUsage(usage);
+
+      setPruneSuccess(
+        `Cleanup complete. Removed old data from ${count} sites.`
+      );
+      setTimeout(() => setPruneSuccess(null), 3000);
+    } finally {
+      setIsPruning(false);
     }
   };
 
@@ -702,6 +736,47 @@ export function App() {
                 <p className="text-success mt-3 text-xs">
                   Data exported as {exportSuccess.toUpperCase()} successfully.
                 </p>
+              )}
+            </div>
+
+            {/* Prune Data Sub-section */}
+            <div className="border-border mt-6 border-t pt-5">
+              <div className="flex items-center gap-2">
+                <Trash2 className="text-primary h-4 w-4" />
+                <span className="text-sm font-medium">Prune History</span>
+              </div>
+              <p className="text-muted-foreground mt-1 text-xs">
+                Delete old data to free up space while keeping recent history.
+              </p>
+
+              <div className="mt-4 flex flex-wrap items-center gap-3">
+                <div className="relative">
+                  <select
+                    className="input appearance-none pr-8"
+                    value={pruneDays}
+                    onChange={(e) => setPruneDays(e.target.value)}
+                  >
+                    <option value="7">Older than 7 days</option>
+                    <option value="30">Older than 30 days</option>
+                    <option value="90">Older than 3 months</option>
+                    <option value="180">Older than 6 months</option>
+                    <option value="365">Older than 1 year</option>
+                  </select>
+                  <ChevronDown className="text-muted-foreground pointer-events-none absolute right-2 top-1/2 h-4 w-4 -translate-y-1/2" />
+                </div>
+
+                <button
+                  className="btn btn-outline hover:bg-destructive/10 hover:text-destructive hover:border-destructive/30"
+                  onClick={() => void handlePruneData()}
+                  disabled={isPruning}
+                  type="button"
+                >
+                  {isPruning ? 'Cleaning...' : 'Clean Up'}
+                </button>
+              </div>
+
+              {pruneSuccess && (
+                <p className="text-success mt-3 text-xs">{pruneSuccess}</p>
               )}
             </div>
           </section>

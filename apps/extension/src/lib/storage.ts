@@ -1,4 +1,5 @@
 import { SETTINGS_KEY, STORAGE_KEY, STORE_VERSION } from './constants';
+import { getLocalDateKey } from './date';
 import { DEFAULT_SETTINGS, type Settings } from './settings';
 
 export type StatsTotals = {
@@ -263,4 +264,96 @@ export function aggregateByHost(pages: Record<string, PageStats>): PageStats[] {
   return Array.from(hostMap.values()).sort(
     (a, b) => b.totals.activeMs - a.totals.activeMs
   );
+}
+
+/**
+ * Deletes data older than the specified number of days.
+ * Recalculates totals based on remaining data.
+ * Returns the number of pages affected (pruned).
+ */
+export async function deleteOlderThan(days: number): Promise<number> {
+  const store = await getStore();
+  const cutoffDate = new Date();
+  cutoffDate.setDate(cutoffDate.getDate() - days);
+  const cutoffKey = getLocalDateKey(cutoffDate);
+
+  let affectedCount = 0;
+  const newPages: Record<string, PageStats> = {};
+  let storeChanged = false;
+
+  for (const [key, page] of Object.entries(store.pages)) {
+    const newByDate: Record<string, StatsTotals> = {};
+    const newByHour: Record<string, StatsTotals> = {};
+    let pageChanged = false;
+
+    // Filter byDate - Keep dates >= cutoffKey
+    for (const [date, stats] of Object.entries(page.byDate)) {
+      if (date >= cutoffKey) {
+        newByDate[date] = stats;
+      } else {
+        pageChanged = true;
+      }
+    }
+
+    // Filter byHour - Keep hours where date part >= cutoffKey
+    for (const [hour, stats] of Object.entries(page.byHour)) {
+      const datePart = hour.split('T')[0];
+      if (datePart >= cutoffKey) {
+        newByHour[hour] = stats;
+      } else {
+        pageChanged = true;
+      }
+    }
+
+    if (pageChanged) {
+      storeChanged = true;
+
+      // If no data left, we could delete the page entirely if we wanted strict cleanup.
+      // However, we might want to keep the record that we visited this site (metadata).
+      // For now, let's keep the page entry but with reduced totals.
+      // If NO data is left at all (empty byDate), we can decide:
+      // Option A: Delete page key entirely.
+      // Option B: Keep page with 0 stats.
+      // Let's go with Option A for "Cleanup" - if no recent history, forget it.
+
+      if (Object.keys(newByDate).length === 0) {
+        affectedCount++;
+        continue; // Skip adding to newPages, effectively deleting it
+      }
+
+      affectedCount++;
+
+      // Recalculate totals from scratch based on remaining data
+      const newTotals = emptyTotals();
+      for (const stats of Object.values(newByDate)) {
+        newTotals.visits += stats.visits;
+        newTotals.sessions += stats.sessions;
+        newTotals.activeMs += stats.activeMs;
+        newTotals.clicks += stats.clicks;
+        newTotals.scrollDistance += stats.scrollDistance;
+        newTotals.tabSwitches += stats.tabSwitches;
+      }
+
+      newPages[key] = {
+        ...page,
+        totals: newTotals,
+        byDate: newByDate,
+        byHour: newByHour,
+        // We do strictly update lastSeenAt? probably not needed,
+        // as lastSeenAt should reflect the true last visit.
+        // If the last visit was > 30 days ago, and we delete it...
+        // effectively the page is gone due to the check above (Object.keys(newByDate).length === 0).
+        // So this block is for pages that have SOME data remaining.
+      };
+    } else {
+      newPages[key] = page;
+    }
+  }
+
+  if (storeChanged) {
+    store.pages = newPages;
+    await setStore(store);
+  }
+
+  return affectedCount;
 }
