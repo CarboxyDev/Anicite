@@ -8,7 +8,6 @@
       "outputs": ["dist/**", ".next/**", "build/**", ".output/**"],
       "inputs": [
         "src/**",
-        "prisma/**",
         "package.json",
         "tsconfig.json",
         "next.config.ts",
@@ -20,12 +19,10 @@
       "inputs": ["src/**/*.tsx", "src/**/*.ts", "tsconfig.json"]
     },
     "typecheck": {
-      "dependsOn": ["db:generate"],
       "cache": true,
-      "inputs": ["src/**", "prisma/**", "tsconfig.json", "package.json"]
+      "inputs": ["src/**", "tsconfig.json", "package.json"]
     },
     "dev": {
-      "dependsOn": ["db:generate"],
       "cache": false,
       "persistent": true,
       "with": ["dev:components"]
@@ -34,10 +31,6 @@
       "cache": false,
       "persistent": true,
       "outputs": ["dist/**"]
-    },
-    "db:generate": {
-      "cache": false,
-      "env": ["DATABASE_URL"]
     },
     "lint": {
       "dependsOn": [],
@@ -60,30 +53,6 @@
     "format:check": {
       "cache": true,
       "outputs": []
-    },
-    "db:migrate": {
-      "cache": false,
-      "outputs": [],
-      "env": ["DATABASE_URL"]
-    },
-    "db:push": {
-      "cache": false,
-      "outputs": [],
-      "env": ["DATABASE_URL"]
-    },
-    "db:studio": {
-      "cache": false,
-      "persistent": true,
-      "env": ["DATABASE_URL"]
-    },
-    "db:seed": {
-      "cache": false,
-      "outputs": [],
-      "env": ["DATABASE_URL"]
-    },
-    "email:dev": {
-      "cache": false,
-      "persistent": true
     }
   }
 }
