@@ -231,3 +231,36 @@ export async function getStorageUsage(): Promise<StorageUsage> {
     percentUsed: null,
   };
 }
+
+/**
+ * Aggregate pages by host to deduplicate entries with different paths.
+ * Returns an array of PageStats aggregated by host, sorted by total active time (descending).
+ */
+export function aggregateByHost(pages: Record<string, PageStats>): PageStats[] {
+  const hostMap = new Map<string, PageStats>();
+
+  for (const page of Object.values(pages)) {
+    const existing = hostMap.get(page.host);
+    if (existing) {
+      // Aggregate totals
+      existing.totals.activeMs += page.totals.activeMs;
+      existing.totals.visits += page.totals.visits;
+      existing.totals.sessions += page.totals.sessions;
+      existing.totals.clicks += page.totals.clicks;
+      existing.totals.scrollDistance += page.totals.scrollDistance;
+      existing.totals.tabSwitches += page.totals.tabSwitches;
+      if (page.lastSeenAt > existing.lastSeenAt) {
+        existing.lastSeenAt = page.lastSeenAt;
+      }
+    } else {
+      hostMap.set(page.host, {
+        ...page,
+        key: page.host, // Use host as the key for deduplication
+      });
+    }
+  }
+
+  return Array.from(hostMap.values()).sort(
+    (a, b) => b.totals.activeMs - a.totals.activeMs
+  );
+}

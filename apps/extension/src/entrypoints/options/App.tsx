@@ -28,6 +28,7 @@ import {
   type TrackingMode,
 } from '../../lib/settings';
 import {
+  aggregateByHost,
   clearStore,
   getSettings,
   getStorageUsage,
@@ -171,32 +172,7 @@ export function App() {
       setSettings(storedSettings);
       setStorageUsage(usage);
 
-      // Aggregate pages by host to deduplicate entries with different paths
-      const hostMap = new Map<string, PageStats>();
-      for (const page of Object.values(store.pages)) {
-        const existing = hostMap.get(page.host);
-        if (existing) {
-          // Aggregate totals
-          existing.totals.activeMs += page.totals.activeMs;
-          existing.totals.visits += page.totals.visits;
-          existing.totals.sessions += page.totals.sessions;
-          existing.totals.clicks += page.totals.clicks;
-          existing.totals.scrollDistance += page.totals.scrollDistance;
-          existing.totals.tabSwitches += page.totals.tabSwitches;
-          if (page.lastSeenAt > existing.lastSeenAt) {
-            existing.lastSeenAt = page.lastSeenAt;
-          }
-        } else {
-          hostMap.set(page.host, {
-            ...page,
-            key: page.host, // Use host as the key for deduplication
-          });
-        }
-      }
-
-      const sites = Array.from(hostMap.values()).sort(
-        (a, b) => b.totals.activeMs - a.totals.activeMs
-      );
+      const sites = aggregateByHost(store.pages);
       setTrackedSites(sites);
       setIsLoading(false);
     };
@@ -219,31 +195,7 @@ export function App() {
           pages: Record<string, PageStats>;
         };
 
-        // Aggregate pages by host to deduplicate entries with different paths
-        const hostMap = new Map<string, PageStats>();
-        for (const page of Object.values(store.pages)) {
-          const existing = hostMap.get(page.host);
-          if (existing) {
-            existing.totals.activeMs += page.totals.activeMs;
-            existing.totals.visits += page.totals.visits;
-            existing.totals.sessions += page.totals.sessions;
-            existing.totals.clicks += page.totals.clicks;
-            existing.totals.scrollDistance += page.totals.scrollDistance;
-            existing.totals.tabSwitches += page.totals.tabSwitches;
-            if (page.lastSeenAt > existing.lastSeenAt) {
-              existing.lastSeenAt = page.lastSeenAt;
-            }
-          } else {
-            hostMap.set(page.host, {
-              ...page,
-              key: page.host,
-            });
-          }
-        }
-
-        const sites = Array.from(hostMap.values()).sort(
-          (a, b) => b.totals.activeMs - a.totals.activeMs
-        );
+        const sites = aggregateByHost(store.pages);
         setTrackedSites(sites);
 
         // Refresh storage usage
