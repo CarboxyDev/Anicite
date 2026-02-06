@@ -1,42 +1,71 @@
-# anicite
+# Anicite
 
-Chrome analytics done right
+A Chrome extension for local-only, consent-first analytics of your browsing activity. Understand your habits without sending data anywhere.
 
-## Quick Start
+## What is this?
+
+Anicite tracks how you spend time browsing -- page visits, active time, clicks, scrolling, tab switches, and sessions -- and presents it through clean visualizations like donut charts, heatmaps, and daily activity bars. All data stays in your browser using `chrome.storage.local`. Nothing leaves your machine.
+
+## Key Features
+
+- **Fully local** -- all data stored in Chrome's local storage, never transmitted
+- **Rich insights** -- time-by-category donut charts, hourly heatmaps, daily activity bars, top sites
+- **Smart categorization** -- built-in site categories (Productive, Social, Entertainment, Shopping, Reference) with user overrides
+- **Flexible tracking** -- choose between host-only or path-level granularity, focused or visible time tracking modes
+- **Privacy-first** -- no query strings or hash fragments saved, no incognito access, full data export/clear controls
+- **Onboarding wizard** -- explains exactly what gets tracked and how to control it
+
+## Installation
+
+### From the Chrome Web Store
+
+Coming soon.
+
+### Build from source
+
+Requires Node.js >= 20 and pnpm >= 9.
 
 ```bash
+git clone https://github.com/CarboxyDev/anicite.git
+cd anicite
 pnpm install
-pnpm init:project
-pnpm dev
+pnpm build:extension
 ```
 
-## What's Running
+Then load the built extension in Chrome:
 
-- **Web:** http://localhost:3000
-- **API:** http://localhost:8080
-- **API Docs:** http://localhost:8080/docs
+1. Open `chrome://extensions`
+2. Enable "Developer mode" (top right)
+3. Click "Load unpacked"
+4. Select the `apps/extension/.output/chrome-mv3` directory
+
+### Development
+
+```bash
+pnpm dev:extension
+```
+
+This starts the WXT dev server with hot reload. Load the extension from the dev output directory the same way as above.
 
 ## Project Structure
 
 ```
 anicite/
 ├── apps/
-│   ├── web/          # Next.js frontend
-│   └── api/          # Fastify backend
+│   ├── extension/    # Chrome extension (WXT + React)
+│   └── web/          # Landing page (Next.js)
 └── packages/
-    ├── types/        # Shared Zod schemas
+    ├── types/        # Shared TypeScript types
     ├── utils/        # Shared utilities
     └── ui/           # Shared UI components
 ```
 
-## Database
+## Tech Stack
 
-```bash
-pnpm db:studio        # Open Prisma Studio
-pnpm db:migrate       # Run migrations
-pnpm db:seed          # Seed database
-```
+- [WXT](https://wxt.dev) -- web extension framework (Manifest V3)
+- React 19, Tailwind CSS, Lucide icons
+- Chrome Storage API for local persistence
 
----
+## License
 
-Built with [Blitzpack](https://github.com/CarboxyDev/blitzpack)
+MIT
