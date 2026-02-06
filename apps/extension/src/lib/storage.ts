@@ -209,3 +209,27 @@ export async function updatePageStats({
 export async function clearStore(): Promise<void> {
   await chrome.storage.local.remove(STORAGE_KEY);
 }
+
+export type StorageUsage = {
+  bytesInUse: number;
+  quotaBytes: number;
+  percentUsed: number;
+};
+
+/**
+ * Chrome's default storage quota for chrome.storage.local is 10MB (10,485,760 bytes).
+ * This was increased from 5MB in Chrome 114.
+ */
+const CHROME_STORAGE_QUOTA_BYTES = 10 * 1024 * 1024; // 10 MB
+
+export async function getStorageUsage(): Promise<StorageUsage> {
+  const bytesInUse = await chrome.storage.local.getBytesInUse(null);
+  const quotaBytes = CHROME_STORAGE_QUOTA_BYTES;
+  const percentUsed = Math.min((bytesInUse / quotaBytes) * 100, 100);
+
+  return {
+    bytesInUse,
+    quotaBytes,
+    percentUsed,
+  };
+}

@@ -1,4 +1,10 @@
-import { ChevronDown, Download, Search } from 'lucide-react';
+import {
+  AlertTriangle,
+  ChevronDown,
+  Database,
+  Download,
+  Search,
+} from 'lucide-react';
 import { useEffect, useMemo, useState } from 'react';
 
 import {
@@ -19,8 +25,10 @@ import {
 import {
   clearStore,
   getSettings,
+  getStorageUsage,
   getStore,
   type PageStats,
+  type StorageUsage,
   type Store,
   updateSettings,
 } from '../../lib/storage';
@@ -116,6 +124,14 @@ const CATEGORY_COLORS: Record<Category, { bg: string; text: string }> = {
   other: { bg: 'bg-zinc-400', text: 'text-zinc-400' },
 };
 
+function formatBytes(bytes: number): string {
+  if (bytes === 0) return '0 B';
+  const k = 1024;
+  const sizes = ['B', 'KB', 'MB', 'GB'];
+  const i = Math.floor(Math.log(bytes) / Math.log(k));
+  return `${parseFloat((bytes / Math.pow(k, i)).toFixed(1))} ${sizes[i]}`;
+}
+
 export function App() {
   const [settings, setSettings] = useState<Settings>(DEFAULT_SETTINGS);
   const [trackedSites, setTrackedSites] = useState<PageStats[]>([]);
@@ -130,6 +146,7 @@ export function App() {
     useState<ExportDateRange>('all');
   const [exportSuccess, setExportSuccess] = useState<ExportFormat | null>(null);
   const [isLoading, setIsLoading] = useState(true);
+  const [storageUsage, setStorageUsage] = useState<StorageUsage | null>(null);
 
   const filteredSites = useMemo(() => {
     const search = categorySearch.toLowerCase().trim();
@@ -141,11 +158,13 @@ export function App() {
 
   useEffect(() => {
     const init = async () => {
-      const [storedSettings, store] = await Promise.all([
+      const [storedSettings, store, usage] = await Promise.all([
         getSettings(),
         getStore(),
+        getStorageUsage(),
       ]);
       setSettings(storedSettings);
+      setStorageUsage(usage);
 
       // Aggregate pages by host to deduplicate entries with different paths
       const hostMap = new Map<string, PageStats>();
@@ -221,6 +240,9 @@ export function App() {
           (a, b) => b.totals.activeMs - a.totals.activeMs
         );
         setTrackedSites(sites);
+
+        // Refresh storage usage
+        void getStorageUsage().then(setStorageUsage);
       }
     };
 
@@ -280,6 +302,9 @@ export function App() {
       setTrackedSites([]);
       setClearSuccess(true);
       setTimeout(() => setClearSuccess(false), 3000);
+      // Refresh storage usage
+      const usage = await getStorageUsage();
+      setStorageUsage(usage);
     } finally {
       setIsClearing(false);
       setShowClearConfirm(false);
@@ -655,6 +680,71 @@ export function App() {
                 <ChevronDown className="text-muted-foreground pointer-events-none absolute right-2 top-1/2 h-4 w-4 -translate-y-1/2" />
               </div>
             </div>
+
+            {/* Storage Usage */}
+
+            {storageUsage && (
+              <div className="border-border mt-4 border-t pt-4">
+                <div className="flex items-center justify-between gap-2">
+                  <div className="flex items-center gap-2">
+                    <Database className="text-muted-foreground h-4 w-4" />
+                    <span className="text-sm font-medium">Storage Usage</span>
+                  </div>
+                  <span className="text-muted-foreground text-xs">
+                    {formatBytes(storageUsage.bytesInUse)} of{' '}
+                    {formatBytes(storageUsage.quotaBytes)}
+                  </span>
+                </div>
+                <div className="mt-2 h-2 rounded-full bg-zinc-200 dark:bg-zinc-700">
+                  <div
+                    className={`h-full rounded-full transition-all ${
+                      storageUsage.percentUsed >= 95
+                        ? 'bg-destructive'
+                        : storageUsage.percentUsed >= 80
+                          ? 'bg-amber-500'
+                          : 'bg-primary'
+                    }`}
+                    style={{
+                      width: `${Math.max(storageUsage.percentUsed, 1)}%`,
+                    }}
+                  />
+                </div>
+                {storageUsage.percentUsed >= 80 && (
+                  <div
+                    className={`mt-2 flex items-center gap-2 rounded-md px-3 py-2 ${
+                      storageUsage.percentUsed >= 95
+                        ? 'bg-destructive/10'
+                        : 'bg-amber-500/10'
+                    }`}
+                  >
+                    <AlertTriangle
+                      className={`h-4 w-4 shrink-0 ${
+                        storageUsage.percentUsed >= 95
+                          ? 'text-destructive'
+                          : 'text-amber-500'
+                      }`}
+                    />
+                    <p
+                      className={`text-xs font-medium ${
+                        storageUsage.percentUsed >= 95
+                          ? 'text-destructive'
+                          : 'text-amber-600 dark:text-amber-400'
+                      }`}
+                    >
+                      {storageUsage.percentUsed >= 95
+                        ? 'Storage almost full! Consider exporting and clearing old data.'
+                        : 'Storage usage is high. Consider clearing old data soon.'}
+                    </p>
+                  </div>
+                )}
+                {storageUsage.percentUsed < 80 && (
+                  <p className="text-muted-foreground mt-2 text-xs">
+                    {storageUsage.percentUsed.toFixed(1)}% of available storage
+                    used.
+                  </p>
+                )}
+              </div>
+            )}
 
             <div className="mt-6 flex flex-wrap items-center gap-3">
               <button
