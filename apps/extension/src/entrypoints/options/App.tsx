@@ -1,4 +1,15 @@
-import { ChevronDown, Database, Download, Search } from 'lucide-react';
+import {
+  ChevronDown,
+  Database,
+  Download,
+  EyeOff,
+  Globe,
+  HardDrive,
+  Lock,
+  Search,
+  Server,
+  Shield,
+} from 'lucide-react';
 import { useEffect, useMemo, useState } from 'react';
 
 import {
@@ -799,38 +810,101 @@ export function App() {
             </div>
           </section>
 
+          {/* Privacy Section */}
           <section className="card">
-            <div>
-              <h2 className="font-semibold">Privacy</h2>
-              <p className="text-muted-foreground mt-1 text-xs">
-                What Anicite collects and stores.
-              </p>
+            <div className="flex items-center gap-2">
+              <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-emerald-500/15">
+                <Shield className="h-4 w-4 text-emerald-600 dark:text-emerald-400" />
+              </div>
+              <div>
+                <h2 className="font-semibold">Privacy First</h2>
+                <p className="text-muted-foreground text-xs">
+                  How Anicite protects your data.
+                </p>
+              </div>
             </div>
 
-            <div className="text-muted-foreground mt-4 space-y-3 text-xs">
-              <div className="flex items-start gap-2">
-                <span className="bg-primary mt-1 h-2 w-2 shrink-0 rounded-full" />
-                <p>
-                  <strong className="text-foreground">URL data:</strong> Host
-                  and path only. Query strings and hashes are never saved.
+            <div className="mt-5 grid gap-3 sm:grid-cols-2">
+              {/* Local Storage */}
+              <div className="border-border bg-muted/30 rounded-lg border p-3">
+                <div className="flex items-center gap-2">
+                  <HardDrive className="text-primary h-4 w-4" />
+                  <span className="text-sm font-medium">100% Local</span>
+                </div>
+                <p className="text-muted-foreground mt-1.5 text-xs">
+                  All data stays in your browser. Nothing leaves your device.
                 </p>
               </div>
-              <div className="flex items-start gap-2">
-                <span className="bg-primary mt-1 h-2 w-2 shrink-0 rounded-full" />
-                <p>
-                  <strong className="text-foreground">Activity metrics:</strong>{' '}
-                  Page visits, active time, clicks, and scroll depth.
+
+              {/* No Server */}
+              <div className="border-border bg-muted/30 rounded-lg border p-3">
+                <div className="flex items-center gap-2">
+                  <Server className="text-primary h-4 w-4" />
+                  <span className="text-sm font-medium">No Servers</span>
+                </div>
+                <p className="text-muted-foreground mt-1.5 text-xs">
+                  Zero network requests. No accounts, no sync, no tracking.
                 </p>
               </div>
-              <div className="flex items-start gap-2">
-                <span className="bg-primary mt-1 h-2 w-2 shrink-0 rounded-full" />
-                <p>
-                  <strong className="text-foreground">Storage:</strong> All data
-                  is stored locally in your browser. Nothing is sent to any
-                  server.
+
+              {/* URL Sanitization */}
+              <div className="border-border bg-muted/30 rounded-lg border p-3">
+                <div className="flex items-center gap-2">
+                  <Globe className="text-primary h-4 w-4" />
+                  <span className="text-sm font-medium">URL Sanitization</span>
+                </div>
+                <p className="text-muted-foreground mt-1.5 text-xs">
+                  Only the domain address is stored. Query strings and hashes
+                  are stripped.
+                </p>
+              </div>
+
+              {/* Incognito */}
+              <div className="border-border bg-muted/30 rounded-lg border p-3">
+                <div className="flex items-center gap-2">
+                  <EyeOff className="text-primary h-4 w-4" />
+                  <span className="text-sm font-medium">Incognito Blocked</span>
+                </div>
+                <p className="text-muted-foreground mt-1.5 text-xs">
+                  Extension is disabled in incognito mode by design.
+                </p>
+              </div>
+
+              {/* Data Control */}
+              <div className="border-border bg-muted/30 rounded-lg border p-3">
+                <div className="flex items-center gap-2">
+                  <Lock className="text-primary h-4 w-4" />
+                  <span className="text-sm font-medium">Full Control</span>
+                </div>
+                <p className="text-muted-foreground mt-1.5 text-xs">
+                  Export or delete your data anytime. You own everything.
+                </p>
+              </div>
+
+              {/* What's Tracked */}
+              <div className="border-border bg-muted/30 rounded-lg border p-3">
+                <div className="flex items-center gap-2">
+                  <Database className="text-primary h-4 w-4" />
+                  <span className="text-sm font-medium">Minimal Data</span>
+                </div>
+                <p className="text-muted-foreground mt-1.5 text-xs">
+                  Visits, time, clicks, scrolls, tab switches. Nothing personal.
                 </p>
               </div>
             </div>
+
+            <p className="text-muted-foreground mt-4 text-center text-xs">
+              Anicite is open source.{' '}
+              <a
+                href="https://github.com/CarboxyDev/anicite"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="text-primary hover:underline"
+              >
+                Verify our privacy claims in the code
+              </a>
+              .
+            </p>
           </section>
         </div>
       </div>
