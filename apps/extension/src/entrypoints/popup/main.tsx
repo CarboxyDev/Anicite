@@ -7,6 +7,7 @@ import '../../styles/tailwind.css';
 import React from 'react';
 import { createRoot } from 'react-dom/client';
 
+import { ErrorBoundary } from '../../lib/ErrorBoundary';
 import { App } from './App';
 
 const prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
@@ -29,7 +30,9 @@ const root = document.getElementById('root');
 if (root) {
   createRoot(root).render(
     <React.StrictMode>
-      <App />
+      <ErrorBoundary variant="popup">
+        <App />
+      </ErrorBoundary>
     </React.StrictMode>
   );
 }
