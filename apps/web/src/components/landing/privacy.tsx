@@ -98,6 +98,13 @@ export function Privacy() {
             >
               read the source
             </a>
+            {' · '}
+            <a
+              href="/privacy"
+              className="text-primary hover:text-primary/80 font-medium underline underline-offset-4 transition-colors"
+            >
+              full privacy policy
+            </a>
           </p>
         </motion.div>
       </div>

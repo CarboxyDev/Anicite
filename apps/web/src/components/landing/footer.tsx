@@ -29,7 +29,7 @@ export function Footer() {
             Chrome Web Store
           </a>
           <a
-            href="#privacy"
+            href="/privacy"
             className="text-muted-foreground hover:text-foreground text-sm transition-colors"
           >
             Privacy

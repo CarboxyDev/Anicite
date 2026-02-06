@@ -9,9 +9,9 @@ import { GitHubStarsButton } from '@/components/landing/github-stars-button';
 import { siteConfig } from '@/config/site';
 
 const NAV_LINKS = [
-  { label: 'Features', href: '#features' },
-  { label: 'Showcase', href: '#showcase' },
-  { label: 'Privacy', href: '#privacy' },
+  { label: 'Features', href: '/#features' },
+  { label: 'Showcase', href: '/#showcase' },
+  { label: 'Privacy', href: '/#privacy' },
 ] as const;
 
 export function Navbar() {
