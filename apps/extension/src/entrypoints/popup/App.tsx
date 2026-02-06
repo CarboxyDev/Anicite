@@ -21,6 +21,7 @@ import {
 } from '../../lib/categories';
 import { SETTINGS_KEY, STORAGE_KEY } from '../../lib/constants';
 import { getLocalDateKey } from '../../lib/date';
+import { Favicon } from '../../lib/FaviconComponent';
 import { formatDuration } from '../../lib/format';
 import {
   DEFAULT_SETTINGS,
@@ -380,9 +381,12 @@ export function App() {
                   </span>
                 )}
               </div>
-              <p className="font-semibold">
-                {currentHost ?? (isLoading ? 'Loading...' : 'No active tab')}
-              </p>
+              <div className="mt-1 flex items-center gap-2">
+                {currentHost && <Favicon host={currentHost} size={18} />}
+                <p className="font-semibold leading-tight">
+                  {currentHost ?? (isLoading ? 'Loading...' : 'No active tab')}
+                </p>
+              </div>
               {currentHost && (
                 <button
                   className="text-muted-foreground hover:text-foreground mt-0.5 text-[10px] hover:underline"

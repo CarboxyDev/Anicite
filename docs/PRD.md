@@ -84,6 +84,7 @@ Built-in categorization with user overrides:
 #### 1. Popup (320px width)
 - Today's quick stats (active time, visits, sessions, sites count)
 - Current site stats (time, clicks, scroll intensity, tab switches)
+- Favicon display for current site
 - Category selector for current site
 - Quick exclude/include toggle for current site
 - Links to Insights and Settings pages
@@ -95,7 +96,7 @@ Built-in categorization with user overrides:
 - **Time by Category** - Interactive donut chart with legend
 - **Daily Activity** - Bar chart showing daily breakdown
 - **Hourly Patterns** - Heatmap (weekly for 7+ days, hourly bar for Today)
-- **Top Sites** - Paginated list with sorting options:
+- **Top Sites** - Paginated list with favicons and sorting options:
   - Active time
   - Clicks  
   - Scroll intensity
@@ -106,8 +107,8 @@ Built-in categorization with user overrides:
 #### 3. Options/Settings Page
 - Tracking toggle (enable/disable)
 - Time tracking mode selector (focused vs visible)
-- Excluded sites list with add/remove
-- Site categories manager with search
+- Excluded sites list with favicons and add/remove
+- Site categories manager with favicons and search
 - Data export (JSON/CSV) with date range selector
 - Clear all data with confirmation
 - Privacy summary section
@@ -217,7 +218,6 @@ Built-in categorization with user overrides:
 ### Near-term
 - Weekly summary/digest view
 - Focus mode / blocking integration
-- Favicon support for site identification
 - Time goals / budgets per category
 
 ### Medium-term
@@ -235,7 +235,6 @@ Built-in categorization with user overrides:
 
 ## Open Questions
 
-- Should we add favicon fetching for better site recognition?
 - Automatic data pruning after X days?
 - Goal/budget system for limiting time on specific categories?
 - Weekly email digest option (would require optional email collection)?

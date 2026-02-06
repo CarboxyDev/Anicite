@@ -20,6 +20,7 @@ import {
 } from '../../lib/categories';
 import { SETTINGS_KEY, STORAGE_KEY, STORE_VERSION } from '../../lib/constants';
 import { getLocalDateKey } from '../../lib/date';
+import { Favicon } from '../../lib/FaviconComponent';
 import {
   DEFAULT_SETTINGS,
   isValidHost,
@@ -38,7 +39,6 @@ import {
   type Store,
   updateSettings,
 } from '../../lib/storage';
-
 type ExportFormat = 'json' | 'csv';
 type ExportDateRange = 'all' | '7d' | '30d' | '90d';
 
@@ -503,7 +503,10 @@ export function App() {
                     key={host}
                     className="border-border bg-muted/30 flex items-center justify-between rounded-md border px-3 py-2"
                   >
-                    <span className="text-sm">{host}</span>
+                    <div className="flex items-center gap-2">
+                      <Favicon host={host} size={16} />
+                      <span className="text-sm leading-snug">{host}</span>
+                    </div>
                     <button
                       className="text-destructive text-xs hover:underline"
                       onClick={() => void handleRemoveExclusion(host)}
@@ -555,9 +558,12 @@ export function App() {
                         key={site.key}
                         className="border-border bg-muted/30 flex items-center justify-between gap-2 rounded-md border px-3 py-2"
                       >
-                        <span className="min-w-0 truncate text-sm">
-                          {site.host}
-                        </span>
+                        <div className="flex min-w-0 items-center gap-2">
+                          <Favicon host={site.host} size={16} />
+                          <span className="min-w-0 truncate text-sm leading-snug">
+                            {site.host}
+                          </span>
+                        </div>
                         <div className="relative shrink-0">
                           <select
                             className={`appearance-none rounded-md border-0 bg-transparent py-1 pl-2 pr-6 text-xs font-medium outline-none ${CATEGORY_COLORS[category].text}`}

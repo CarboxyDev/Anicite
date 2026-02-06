@@ -28,6 +28,7 @@ import {
 } from '../../lib/categories';
 import { SETTINGS_KEY, STORAGE_KEY } from '../../lib/constants';
 import { getLocalDateKey } from '../../lib/date';
+import { Favicon } from '../../lib/FaviconComponent';
 import { formatDuration } from '../../lib/format';
 import {
   aggregateByCategory,
@@ -981,10 +982,11 @@ export function App() {
                     >
                       <div className="flex items-center justify-between gap-2 text-sm">
                         <div className="flex min-w-0 items-center gap-2">
-                          <span className="text-muted-foreground w-5 shrink-0 text-xs">
+                          <span className="text-muted-foreground w-5 shrink-0 text-xs leading-snug">
                             {sitesPage * SITES_PER_PAGE + index + 1}.
                           </span>
-                          <span className="truncate font-medium">
+                          <Favicon host={site.host} size={16} />
+                          <span className="truncate font-medium leading-snug">
                             {site.host}
                           </span>
                         </div>
