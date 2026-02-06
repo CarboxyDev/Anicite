@@ -17,9 +17,10 @@ export function Hero() {
           transition={{ duration: 0.5 }}
           className="space-y-6"
         >
-          <div className="bg-secondary text-secondary-foreground mx-auto inline-flex items-center gap-2 rounded-full px-4 py-1.5 text-sm font-medium">
-            <span className="bg-primary h-1.5 w-1.5 rounded-full" />
-            100% local. Zero tracking.
+          <div className="border-border text-muted-foreground mx-auto inline-flex items-center gap-2 rounded-full border px-3.5 py-1.5 text-sm">
+            Local-only browsing analytics
+            <span className="bg-border h-3.5 w-px" />
+            Free forever
           </div>
 
           <h1 className="text-foreground text-4xl font-bold tracking-tight sm:text-5xl lg:text-6xl">

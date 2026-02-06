@@ -37,8 +37,16 @@ export function Footer() {
         </div>
 
         <p className="text-muted-foreground text-xs">
-          &copy; {new Date().getFullYear()} {siteConfig.name}. Open source under
-          MIT.
+          &copy; {new Date().getFullYear()} {siteConfig.name}. Built by{' '}
+          <a
+            href="https://carboxy.dev"
+            target="_blank"
+            rel="noopener noreferrer"
+            className="text-foreground hover:text-primary font-medium transition-colors"
+          >
+            CarboxyDev
+          </a>
+          . Open source under MIT.
         </p>
       </div>
     </footer>

@@ -67,9 +67,9 @@ function FeatureCard({
       whileInView={{ opacity: 1, y: 0 }}
       viewport={{ once: true, margin: '-60px' }}
       transition={{ duration: 0.4, delay: index * 0.08 }}
-      className="border-border bg-card hover:border-primary/20 group rounded-xl border p-6 transition-colors"
+      className="border-border bg-card group rounded-xl border p-6"
     >
-      <div className="bg-primary/10 text-primary group-hover:bg-primary/15 mb-4 flex h-10 w-10 items-center justify-center rounded-lg transition-colors">
+      <div className="bg-primary/10 text-primary mb-4 flex h-10 w-10 items-center justify-center rounded-lg">
         <Icon className="h-5 w-5" />
       </div>
       <h3 className="text-foreground mb-2 text-base font-semibold">{title}</h3>

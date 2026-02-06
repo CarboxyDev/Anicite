@@ -1,66 +1,104 @@
 'use client';
 
 import { motion } from 'framer-motion';
-import { Check, Shield } from 'lucide-react';
+import {
+  Code,
+  EyeOff,
+  HardDrive,
+  type LucideIcon,
+  WifiOff,
+} from 'lucide-react';
 
-const PRIVACY_POINTS = [
-  'All data stored in chrome.storage.local — never leaves your device',
-  'Zero network requests for analytics or telemetry',
-  'No account or sign-up required',
-  'Query strings and hash fragments are never saved',
-  'Incognito mode is automatically excluded',
-  'Full data export so you always own your data',
-  'Open source — verify everything yourself',
+const PROMISES = [
+  {
+    icon: HardDrive,
+    title: 'Stored on your device',
+    description:
+      'All data lives in chrome.storage.local. No servers, no cloud, no third parties. Ever.',
+  },
+  {
+    icon: WifiOff,
+    title: 'Zero network requests',
+    description:
+      'Anicite makes exactly zero requests to any external server. No analytics, no telemetry, no pings.',
+  },
+  {
+    icon: EyeOff,
+    title: 'You own everything',
+    description:
+      'Export all your data as JSON or CSV at any time. Pause tracking, exclude sites, or wipe everything in one click.',
+  },
 ] as const;
+
+function PrivacyCard({
+  icon: Icon,
+  title,
+  description,
+  index,
+}: {
+  icon: LucideIcon;
+  title: string;
+  description: string;
+  index: number;
+}) {
+  return (
+    <motion.div
+      initial={{ opacity: 0, y: 20 }}
+      whileInView={{ opacity: 1, y: 0 }}
+      viewport={{ once: true, margin: '-60px' }}
+      transition={{ duration: 0.4, delay: index * 0.1 }}
+      className="border-border bg-card rounded-xl border p-6"
+    >
+      <div className="bg-primary/10 text-primary mb-4 flex h-10 w-10 items-center justify-center rounded-lg">
+        <Icon className="h-5 w-5" />
+      </div>
+      <h3 className="text-foreground mb-2 text-base font-semibold">{title}</h3>
+      <p className="text-muted-foreground text-sm leading-relaxed">
+        {description}
+      </p>
+    </motion.div>
+  );
+}
 
 export function Privacy() {
   return (
     <section id="privacy" className="px-6 py-20 md:py-28">
-      <div className="mx-auto max-w-4xl">
-        <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          whileInView={{ opacity: 1, y: 0 }}
-          viewport={{ once: true, margin: '-60px' }}
-          transition={{ duration: 0.5 }}
-          className="border-border bg-card overflow-hidden rounded-2xl border"
-        >
-          <div className="p-8 md:p-12">
-            <div className="mb-8 flex items-start gap-4">
-              <div className="bg-primary/10 flex h-12 w-12 shrink-0 items-center justify-center rounded-xl">
-                <Shield className="text-primary h-6 w-6" />
-              </div>
-              <div>
-                <h2 className="text-foreground text-2xl font-bold sm:text-3xl">
-                  Privacy is the whole point
-                </h2>
-                <p className="text-muted-foreground mt-2 text-base">
-                  We built Anicite because we wanted browsing insights without
-                  the creepy trade-offs. Here&apos;s what that means in
-                  practice.
-                </p>
-              </div>
-            </div>
+      <div className="mx-auto max-w-6xl">
+        <div className="mb-14 text-center">
+          <h2 className="text-foreground mb-4 text-3xl font-bold tracking-tight sm:text-4xl">
+            Privacy isn&apos;t a feature — it&apos;s the architecture
+          </h2>
+          <p className="text-muted-foreground mx-auto max-w-2xl text-lg">
+            We built Anicite so that privacy violations are structurally
+            impossible, not just promised.
+          </p>
+        </div>
 
-            <div className="grid gap-3 sm:grid-cols-2">
-              {PRIVACY_POINTS.map((point, index) => (
-                <motion.div
-                  key={point}
-                  initial={{ opacity: 0, x: -10 }}
-                  whileInView={{ opacity: 1, x: 0 }}
-                  viewport={{ once: true }}
-                  transition={{ duration: 0.3, delay: index * 0.05 }}
-                  className="flex items-start gap-3 rounded-lg p-2"
-                >
-                  <div className="bg-success/10 mt-0.5 flex h-5 w-5 shrink-0 items-center justify-center rounded-full">
-                    <Check className="text-success h-3 w-3" />
-                  </div>
-                  <span className="text-foreground text-sm leading-relaxed">
-                    {point}
-                  </span>
-                </motion.div>
-              ))}
-            </div>
-          </div>
+        <div className="grid grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-3">
+          {PROMISES.map((promise, index) => (
+            <PrivacyCard key={promise.title} {...promise} index={index} />
+          ))}
+        </div>
+
+        <motion.div
+          initial={{ opacity: 0 }}
+          whileInView={{ opacity: 1 }}
+          viewport={{ once: true }}
+          transition={{ duration: 0.4, delay: 0.3 }}
+          className="mt-8 flex items-center justify-center gap-2"
+        >
+          <Code className="text-muted-foreground h-4 w-4" />
+          <p className="text-muted-foreground text-sm">
+            Don&apos;t take our word for it —{' '}
+            <a
+              href="https://github.com/CarboxyDev/anicite"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="text-primary hover:text-primary/80 font-medium underline underline-offset-4 transition-colors"
+            >
+              read the source
+            </a>
+          </p>
         </motion.div>
       </div>
     </section>
