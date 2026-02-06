@@ -1,5 +1,4 @@
 import {
-  ChevronDown,
   Database,
   Download,
   EyeOff,
@@ -13,6 +12,13 @@ import {
 } from 'lucide-react';
 import { useEffect, useMemo, useState } from 'react';
 
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '../../components/ui/select';
 import {
   CATEGORIES,
   type Category,
@@ -599,25 +605,39 @@ export function App() {
                           </span>
                         </div>
                         <div className="relative shrink-0">
-                          <select
-                            className={`appearance-none rounded-md border-0 bg-transparent py-1 pl-2 pr-6 text-xs font-medium outline-none ${CATEGORY_COLORS[category].text}`}
+                          <Select
                             value={category}
-                            onChange={(e) =>
+                            onValueChange={(val) =>
                               void handleCategoryChange(
                                 site.host,
-                                e.target.value as Category
+                                val as Category
                               )
                             }
                           >
-                            {CATEGORY_LIST.map((cat) => (
-                              <option key={cat} value={cat}>
-                                {CATEGORIES[cat].label}
-                              </option>
-                            ))}
-                          </select>
-                          <ChevronDown
-                            className={`pointer-events-none absolute right-0 top-1/2 h-3 w-3 -translate-y-1/2 ${CATEGORY_COLORS[category].text}`}
-                          />
+                            <SelectTrigger
+                              className={`h-7 w-[130px] border-none bg-transparent p-0 text-xs shadow-none hover:bg-transparent focus:ring-0 ${CATEGORY_COLORS[category].text}`}
+                            >
+                              <div className="flex items-center gap-2">
+                                <SelectValue />
+                              </div>
+                            </SelectTrigger>
+                            <SelectContent align="end">
+                              {CATEGORY_LIST.map((cat) => (
+                                <SelectItem
+                                  key={cat}
+                                  value={cat}
+                                  className="text-xs"
+                                >
+                                  <div className="flex items-center gap-2">
+                                    <span
+                                      className={`h-2 w-2 shrink-0 rounded-full ${CATEGORY_COLORS[cat].bg}`}
+                                    />
+                                    <span>{CATEGORIES[cat].label}</span>
+                                  </div>
+                                </SelectItem>
+                              ))}
+                            </SelectContent>
+                          </Select>
                         </div>
                       </div>
                     );
@@ -690,27 +710,28 @@ export function App() {
               </p>
 
               <div className="mt-4 flex flex-wrap items-center gap-3">
-                <div className="relative">
-                  <select
-                    className="input appearance-none pr-8"
-                    value={exportDateRange}
-                    onChange={(e) =>
-                      setExportDateRange(e.target.value as ExportDateRange)
-                    }
-                  >
+                <Select
+                  value={exportDateRange}
+                  onValueChange={(val) =>
+                    setExportDateRange(val as ExportDateRange)
+                  }
+                >
+                  <SelectTrigger className="w-[180px]">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
                     {(
                       Object.entries(DATE_RANGE_LABELS) as [
                         ExportDateRange,
                         string,
                       ][]
                     ).map(([value, label]) => (
-                      <option key={value} value={value}>
+                      <SelectItem key={value} value={value}>
                         {label}
-                      </option>
+                      </SelectItem>
                     ))}
-                  </select>
-                  <ChevronDown className="text-muted-foreground pointer-events-none absolute right-2 top-1/2 h-4 w-4 -translate-y-1/2" />
-                </div>
+                  </SelectContent>
+                </Select>
 
                 <div className="flex gap-2">
                   <button
@@ -750,20 +771,18 @@ export function App() {
               </p>
 
               <div className="mt-4 flex flex-wrap items-center gap-3">
-                <div className="relative">
-                  <select
-                    className="input appearance-none pr-8"
-                    value={pruneDays}
-                    onChange={(e) => setPruneDays(e.target.value)}
-                  >
-                    <option value="7">Older than 7 days</option>
-                    <option value="30">Older than 30 days</option>
-                    <option value="90">Older than 3 months</option>
-                    <option value="180">Older than 6 months</option>
-                    <option value="365">Older than 1 year</option>
-                  </select>
-                  <ChevronDown className="text-muted-foreground pointer-events-none absolute right-2 top-1/2 h-4 w-4 -translate-y-1/2" />
-                </div>
+                <Select value={pruneDays} onValueChange={setPruneDays}>
+                  <SelectTrigger className="w-[200px]">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="7">Older than 7 days</SelectItem>
+                    <SelectItem value="30">Older than 30 days</SelectItem>
+                    <SelectItem value="90">Older than 3 months</SelectItem>
+                    <SelectItem value="180">Older than 6 months</SelectItem>
+                    <SelectItem value="365">Older than 1 year</SelectItem>
+                  </SelectContent>
+                </Select>
 
                 <button
                   className="btn btn-outline hover:bg-destructive/10 hover:text-destructive hover:border-destructive/30"

@@ -1,7 +1,6 @@
 import {
   ArrowLeftRight,
   BarChart3,
-  ChevronDown,
   Clock,
   Eye,
   Globe,
@@ -13,6 +12,13 @@ import {
 } from 'lucide-react';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '../../components/ui/select';
 import {
   CATEGORIES,
   type Category,
@@ -406,27 +412,32 @@ export function App() {
               )}
             </div>
             {currentHost && (
-              <div className="relative inline-flex shrink-0">
-                <span
-                  className={`h-2 w-2 shrink-0 self-center rounded-full ${CATEGORY_COLORS[currentCategory].bg}`}
-                />
-                <select
-                  className={`appearance-none bg-transparent py-0.5 pl-1.5 pr-4 text-xs font-medium outline-none ${CATEGORY_COLORS[currentCategory].text}`}
-                  value={currentCategory}
-                  onChange={(e) =>
-                    void handleCategoryChange(e.target.value as Category)
-                  }
+              <Select
+                value={currentCategory}
+                onValueChange={(val) =>
+                  void handleCategoryChange(val as Category)
+                }
+              >
+                <SelectTrigger
+                  className={`h-6 w-fit gap-1.5 border-none bg-transparent p-0 text-xs shadow-none hover:bg-transparent focus:ring-0 ${CATEGORY_COLORS[currentCategory].text}`}
                 >
+                  <div className="flex items-center gap-1.5">
+                    <SelectValue />
+                  </div>
+                </SelectTrigger>
+                <SelectContent align="end">
                   {CATEGORY_LIST.map((cat) => (
-                    <option key={cat} value={cat}>
-                      {CATEGORIES[cat].label}
-                    </option>
+                    <SelectItem key={cat} value={cat} className="text-xs">
+                      <div className="flex items-center gap-2">
+                        <span
+                          className={`h-2 w-2 shrink-0 rounded-full ${CATEGORY_COLORS[cat].bg}`}
+                        />
+                        <span>{CATEGORIES[cat].label}</span>
+                      </div>
+                    </SelectItem>
                   ))}
-                </select>
-                <ChevronDown
-                  className={`pointer-events-none absolute right-0 top-1/2 h-2.5 w-2.5 -translate-y-1/2 ${CATEGORY_COLORS[currentCategory].text}`}
-                />
-              </div>
+                </SelectContent>
+              </Select>
             )}
           </div>
 

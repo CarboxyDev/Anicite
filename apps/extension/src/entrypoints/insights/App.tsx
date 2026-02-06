@@ -21,6 +21,13 @@ import {
 } from 'react';
 
 import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '../../components/ui/select';
+import {
   CATEGORIES,
   type Category,
   CATEGORY_LIST,
@@ -906,20 +913,28 @@ export function App() {
           <section className="card">
             <div className="flex items-start justify-between gap-2">
               <h2 className="text-sm font-semibold">Top Sites</h2>
-              <div className="relative">
-                <select
-                  className="text-muted-foreground hover:text-foreground appearance-none bg-transparent pr-5 text-xs font-medium outline-none transition-colors"
-                  value={sortBy}
-                  onChange={(e) => setSortBy(e.target.value as SortMetric)}
-                >
+              <Select
+                value={sortBy}
+                onValueChange={(val) => setSortBy(val as SortMetric)}
+              >
+                <SelectTrigger className="h-7 w-[150px] text-xs">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent align="end">
                   {SORT_OPTIONS.map((opt) => (
-                    <option key={opt.value} value={opt.value}>
-                      {opt.label}
-                    </option>
+                    <SelectItem
+                      key={opt.value}
+                      value={opt.value}
+                      className="text-xs"
+                    >
+                      <div className="flex items-center gap-2">
+                        <opt.icon className="h-3.5 w-3.5 opacity-70" />
+                        <span>{opt.label}</span>
+                      </div>
+                    </SelectItem>
                   ))}
-                </select>
-                <ChevronDown className="text-muted-foreground pointer-events-none absolute right-0 top-1/2 h-3 w-3 -translate-y-1/2" />
-              </div>
+                </SelectContent>
+              </Select>
             </div>
 
             {availableCategories.length > 1 && (
