@@ -1,0 +1,92 @@
+'use client';
+
+import { Button } from '@repo/packages-ui/button';
+import { ThemeToggle } from '@repo/packages-ui/theme-toggle';
+import { motion } from 'framer-motion';
+import { Menu, X } from 'lucide-react';
+import { useState } from 'react';
+
+import { siteConfig } from '@/config/site';
+
+const NAV_LINKS = [
+  { label: 'Features', href: '#features' },
+  { label: 'Showcase', href: '#showcase' },
+  { label: 'Privacy', href: '#privacy' },
+] as const;
+
+export function Navbar() {
+  const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
+
+  return (
+    <motion.header
+      initial={{ y: -20, opacity: 0 }}
+      animate={{ y: 0, opacity: 1 }}
+      transition={{ duration: 0.4 }}
+      className="bg-background/80 border-border sticky top-0 z-50 border-b backdrop-blur-md"
+    >
+      <div className="mx-auto flex h-16 max-w-6xl items-center justify-between px-6">
+        <a href="/" className="flex items-center gap-2.5">
+          <div className="bg-primary flex h-8 w-8 items-center justify-center rounded-lg">
+            <span className="text-primary-foreground text-sm font-bold">A</span>
+          </div>
+          <span className="text-foreground text-lg font-semibold tracking-tight">
+            {siteConfig.name}
+          </span>
+        </a>
+
+        <nav className="hidden items-center gap-8 md:flex">
+          {NAV_LINKS.map((link) => (
+            <a
+              key={link.href}
+              href={link.href}
+              className="text-muted-foreground hover:text-foreground text-sm font-medium transition-colors"
+            >
+              {link.label}
+            </a>
+          ))}
+        </nav>
+
+        <div className="flex items-center gap-3">
+          <ThemeToggle />
+          <Button asChild size="sm" className="hidden sm:inline-flex">
+            <a href={siteConfig.chromeWebStore}>Add to Chrome</a>
+          </Button>
+          <button
+            onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
+            className="text-muted-foreground hover:text-foreground md:hidden"
+          >
+            {isMobileMenuOpen ? (
+              <X className="h-5 w-5" />
+            ) : (
+              <Menu className="h-5 w-5" />
+            )}
+          </button>
+        </div>
+      </div>
+
+      {isMobileMenuOpen && (
+        <motion.div
+          initial={{ opacity: 0, height: 0 }}
+          animate={{ opacity: 1, height: 'auto' }}
+          className="border-border border-t md:hidden"
+        >
+          <div className="flex flex-col gap-1 px-6 py-4">
+            {NAV_LINKS.map((link) => (
+              <a
+                key={link.href}
+                href={link.href}
+                onClick={() => setIsMobileMenuOpen(false)}
+                className="text-muted-foreground hover:text-foreground rounded-md px-3 py-2 text-sm font-medium transition-colors"
+              >
+                {link.label}
+              </a>
+            ))}
+            <Button asChild size="sm" className="mt-2 sm:hidden">
+              <a href={siteConfig.chromeWebStore}>Add to Chrome</a>
+            </Button>
+          </div>
+        </motion.div>
+      )}
+    </motion.header>
+  );
+}
