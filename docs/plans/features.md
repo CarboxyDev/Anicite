@@ -2,56 +2,6 @@
 
 Post-MVP UX improvements for Anicite.
 
----
-
-## High Impact
-
-### 1. Time-of-Day Heatmap (95/100)
-
-Show hourly activity breakdown as a heatmap grid. Helps users identify:
-- Peak productivity hours
-- "Doom-scroll hours" patterns
-- Sleep schedule impact on browsing
-
-**Implementation notes:**
-- Store hourly buckets in `byDate` or separate `byHour` structure
-- 24-column grid visualization (or 7x24 for weekly view)
-- Color intensity based on active time
-
----
-
-### 2. Site Categories / Tagging (90/100)
-
-Let users categorize sites: Productive, Entertainment, Social, News, etc.
-
-**Features:**
-- Manual tagging via settings or popup
-- Auto-suggestions for common domains (github = Productive, twitter = Social)
-- Category breakdown in insights (pie chart or stacked bars)
-- Filter insights by category
-
-**Implementation notes:**
-- Add `categories: Record<string, string>` to settings
-- Maintain a default category map for popular domains
-- New insights section for category analytics
-
----
-
-### 3. Data Export (88/100)
-
-Export all data to JSON or CSV for backup and external analysis.
-
-**Features:**
-- Full export (all pages, all dates)
-- Filtered export (date range, specific sites)
-- JSON for programmatic use, CSV for spreadsheets
-
-**Implementation notes:**
-- Add export button to settings page
-- Use Blob + download link pattern
-- Consider import functionality later
-
----
 
 ### 4. Weekly Comparison (82/100)
 
