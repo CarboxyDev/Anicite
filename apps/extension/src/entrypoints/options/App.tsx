@@ -1,10 +1,4 @@
-import {
-  AlertTriangle,
-  ChevronDown,
-  Database,
-  Download,
-  Search,
-} from 'lucide-react';
+import { ChevronDown, Database, Download, Search } from 'lucide-react';
 import { useEffect, useMemo, useState } from 'react';
 
 import {
@@ -650,136 +644,117 @@ export function App() {
             )}
           </section>
 
+          {/* Storage & Export Section */}
           <section className="card">
-            <div className="flex items-start justify-between gap-4">
-              <div>
-                <h2 className="font-semibold">Data</h2>
-                <p className="text-muted-foreground mt-1 text-xs">
-                  Manage your locally stored browsing data.
-                </p>
-              </div>
-              <div className="relative shrink-0">
-                <select
-                  className="input appearance-none pr-8"
-                  value={exportDateRange}
-                  onChange={(e) =>
-                    setExportDateRange(e.target.value as ExportDateRange)
-                  }
-                >
-                  {(
-                    Object.entries(DATE_RANGE_LABELS) as [
-                      ExportDateRange,
-                      string,
-                    ][]
-                  ).map(([value, label]) => (
-                    <option key={value} value={value}>
-                      {label}
-                    </option>
-                  ))}
-                </select>
-                <ChevronDown className="text-muted-foreground pointer-events-none absolute right-2 top-1/2 h-4 w-4 -translate-y-1/2" />
-              </div>
+            <div>
+              <h2 className="font-semibold">Data Management</h2>
+              <p className="text-muted-foreground mt-1 text-xs">
+                Manage your locally stored browsing data.
+              </p>
             </div>
 
-            {/* Storage Usage */}
-
+            {/* Storage Usage Sub-section */}
             {storageUsage && (
-              <div className="border-border mt-4 border-t pt-4">
-                <div className="flex items-center justify-between gap-2">
-                  <div className="flex items-center gap-2">
-                    <Database className="text-muted-foreground h-4 w-4" />
-                    <span className="text-sm font-medium">Storage Usage</span>
-                  </div>
-                  <span className="text-muted-foreground text-xs">
-                    {formatBytes(storageUsage.bytesInUse)} of{' '}
-                    {formatBytes(storageUsage.quotaBytes)}
+              <div className="border-border bg-muted/30 mt-5 rounded-lg border p-4">
+                <div className="flex items-center gap-2">
+                  <Database className="text-primary h-4 w-4" />
+                  <span className="text-sm font-medium">Storage Usage</span>
+                </div>
+                <div className="mt-3 flex items-baseline justify-between">
+                  <span className="text-2xl font-semibold tabular-nums">
+                    {formatBytes(storageUsage.bytesInUse)}
+                  </span>
+                  <span className="rounded-full bg-emerald-500/15 px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wider text-emerald-600 dark:text-emerald-400">
+                    Unlimited
                   </span>
                 </div>
-                <div className="mt-2 h-2 rounded-full bg-zinc-200 dark:bg-zinc-700">
-                  <div
-                    className={`h-full rounded-full transition-all ${
-                      storageUsage.percentUsed >= 95
-                        ? 'bg-destructive'
-                        : storageUsage.percentUsed >= 80
-                          ? 'bg-amber-500'
-                          : 'bg-primary'
-                    }`}
-                    style={{
-                      width: `${Math.max(storageUsage.percentUsed, 1)}%`,
-                    }}
-                  />
-                </div>
-                {storageUsage.percentUsed >= 80 && (
-                  <div
-                    className={`mt-2 flex items-center gap-2 rounded-md px-3 py-2 ${
-                      storageUsage.percentUsed >= 95
-                        ? 'bg-destructive/10'
-                        : 'bg-amber-500/10'
-                    }`}
-                  >
-                    <AlertTriangle
-                      className={`h-4 w-4 shrink-0 ${
-                        storageUsage.percentUsed >= 95
-                          ? 'text-destructive'
-                          : 'text-amber-500'
-                      }`}
-                    />
-                    <p
-                      className={`text-xs font-medium ${
-                        storageUsage.percentUsed >= 95
-                          ? 'text-destructive'
-                          : 'text-amber-600 dark:text-amber-400'
-                      }`}
-                    >
-                      {storageUsage.percentUsed >= 95
-                        ? 'Storage almost full! Consider exporting and clearing old data.'
-                        : 'Storage usage is high. Consider clearing old data soon.'}
-                    </p>
-                  </div>
-                )}
-                {storageUsage.percentUsed < 80 && (
-                  <p className="text-muted-foreground mt-2 text-xs">
-                    {storageUsage.percentUsed.toFixed(1)}% of available storage
-                    used.
-                  </p>
-                )}
+                <p className="text-muted-foreground mt-2 text-xs">
+                  All data is stored locally in your browser with no size
+                  restrictions.
+                </p>
               </div>
             )}
 
-            <div className="mt-6 flex flex-wrap items-center gap-3">
-              <button
-                className="btn btn-outline flex items-center gap-2"
-                onClick={() => void handleExportData('json')}
-                disabled={isExporting}
-                type="button"
-              >
-                <Download className="h-4 w-4" />
-                {isExporting ? 'Exporting...' : 'Export JSON'}
-              </button>
-              <button
-                className="btn btn-outline flex items-center gap-2"
-                onClick={() => void handleExportData('csv')}
-                disabled={isExporting}
-                type="button"
-              >
-                <Download className="h-4 w-4" />
-                {isExporting ? 'Exporting...' : 'Export CSV'}
-              </button>
+            {/* Export Data Sub-section */}
+            <div className="mt-6">
+              <div className="flex items-center gap-2">
+                <Download className="text-primary h-4 w-4" />
+                <span className="text-sm font-medium">Export Data</span>
+              </div>
+              <p className="text-muted-foreground mt-1 text-xs">
+                Download your browsing data as a file. Choose a date range and
+                format.
+              </p>
+
+              <div className="mt-4 flex flex-wrap items-center gap-3">
+                <div className="relative">
+                  <select
+                    className="input appearance-none pr-8"
+                    value={exportDateRange}
+                    onChange={(e) =>
+                      setExportDateRange(e.target.value as ExportDateRange)
+                    }
+                  >
+                    {(
+                      Object.entries(DATE_RANGE_LABELS) as [
+                        ExportDateRange,
+                        string,
+                      ][]
+                    ).map(([value, label]) => (
+                      <option key={value} value={value}>
+                        {label}
+                      </option>
+                    ))}
+                  </select>
+                  <ChevronDown className="text-muted-foreground pointer-events-none absolute right-2 top-1/2 h-4 w-4 -translate-y-1/2" />
+                </div>
+
+                <div className="flex gap-2">
+                  <button
+                    className="btn btn-outline flex items-center gap-2"
+                    onClick={() => void handleExportData('json')}
+                    disabled={isExporting}
+                    type="button"
+                  >
+                    {isExporting ? 'Exporting...' : 'JSON'}
+                  </button>
+                  <button
+                    className="btn btn-outline flex items-center gap-2"
+                    onClick={() => void handleExportData('csv')}
+                    disabled={isExporting}
+                    type="button"
+                  >
+                    {isExporting ? 'Exporting...' : 'CSV'}
+                  </button>
+                </div>
+              </div>
+
+              {exportSuccess && (
+                <p className="text-success mt-3 text-xs">
+                  Data exported as {exportSuccess.toUpperCase()} successfully.
+                </p>
+              )}
+            </div>
+          </section>
+
+          {/* Danger Zone Section */}
+          <section className="card border-destructive/30 bg-destructive/5">
+            <div>
+              <h2 className="text-destructive font-semibold">Danger Zone</h2>
+              <p className="text-muted-foreground mt-1 text-xs">
+                Irreversible actions. Proceed with caution.
+              </p>
             </div>
 
-            {exportSuccess && (
-              <p className="text-success mt-3 text-xs">
-                Data exported as {exportSuccess.toUpperCase()} successfully.
-              </p>
-            )}
-
-            <div className="border-border mt-6 border-t pt-6">
+            <div className="mt-4">
               {showClearConfirm ? (
                 <div className="space-y-3">
-                  <p className="text-destructive text-sm">
-                    Are you sure? This will permanently delete all stored
-                    browsing data.
-                  </p>
+                  <div className="bg-destructive/10 rounded-md px-3 py-2">
+                    <p className="text-destructive text-sm font-medium">
+                      Are you sure? This will permanently delete all stored
+                      browsing data.
+                    </p>
+                  </div>
                   <div className="flex gap-2">
                     <button
                       className="btn btn-destructive"
@@ -799,13 +774,21 @@ export function App() {
                   </div>
                 </div>
               ) : (
-                <button
-                  className="btn btn-destructive"
-                  onClick={() => setShowClearConfirm(true)}
-                  type="button"
-                >
-                  Clear all data
-                </button>
+                <div className="flex items-center justify-between">
+                  <div>
+                    <p className="text-sm font-medium">Clear all data</p>
+                    <p className="text-muted-foreground text-xs">
+                      Delete all browsing history and statistics.
+                    </p>
+                  </div>
+                  <button
+                    className="btn btn-destructive"
+                    onClick={() => setShowClearConfirm(true)}
+                    type="button"
+                  >
+                    Clear data
+                  </button>
+                </div>
               )}
 
               {clearSuccess && (

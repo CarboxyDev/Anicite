@@ -212,24 +212,22 @@ export async function clearStore(): Promise<void> {
 
 export type StorageUsage = {
   bytesInUse: number;
-  quotaBytes: number;
-  percentUsed: number;
+  /** With unlimitedStorage permission, there's no fixed quota. This is a soft reference limit for UI purposes. */
+  quotaBytes: number | null;
+  percentUsed: number | null;
 };
 
 /**
- * Chrome's default storage quota for chrome.storage.local is 10MB (10,485,760 bytes).
- * This was increased from 5MB in Chrome 114.
+ * With the unlimitedStorage permission, chrome.storage.local has no fixed quota.
+ * We set quotaBytes/percentUsed to null to indicate unlimited storage.
+ * The UI can then display just the current usage without misleading quota warnings.
  */
-const CHROME_STORAGE_QUOTA_BYTES = 10 * 1024 * 1024; // 10 MB
-
 export async function getStorageUsage(): Promise<StorageUsage> {
   const bytesInUse = await chrome.storage.local.getBytesInUse(null);
-  const quotaBytes = CHROME_STORAGE_QUOTA_BYTES;
-  const percentUsed = Math.min((bytesInUse / quotaBytes) * 100, 100);
 
   return {
     bytesInUse,
-    quotaBytes,
-    percentUsed,
+    quotaBytes: null,
+    percentUsed: null,
   };
 }
