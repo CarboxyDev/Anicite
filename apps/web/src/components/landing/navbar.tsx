@@ -1,11 +1,11 @@
 'use client';
 
-import { Button } from '@repo/packages-ui/button';
 import { ThemeToggle } from '@repo/packages-ui/theme-toggle';
 import { motion } from 'framer-motion';
 import { Menu, X } from 'lucide-react';
 import { useState } from 'react';
 
+import { GitHubStarsButton } from '@/components/landing/github-stars-button';
 import { siteConfig } from '@/config/site';
 
 const NAV_LINKS = [
@@ -48,9 +48,9 @@ export function Navbar() {
 
         <div className="flex items-center gap-3">
           <ThemeToggle />
-          <Button asChild size="sm" className="hidden sm:inline-flex">
-            <a href={siteConfig.chromeWebStore}>Add to Chrome</a>
-          </Button>
+          <div className="hidden sm:inline-flex">
+            <GitHubStarsButton />
+          </div>
           <button
             onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
             className="text-muted-foreground hover:text-foreground md:hidden"
@@ -81,9 +81,9 @@ export function Navbar() {
                 {link.label}
               </a>
             ))}
-            <Button asChild size="sm" className="mt-2 sm:hidden">
-              <a href={siteConfig.chromeWebStore}>Add to Chrome</a>
-            </Button>
+            <div className="mt-2 sm:hidden">
+              <GitHubStarsButton />
+            </div>
           </div>
         </motion.div>
       )}

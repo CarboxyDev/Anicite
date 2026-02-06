@@ -1,7 +1,6 @@
 'use client';
 
 import { Button } from '@repo/packages-ui/button';
-import { GitHubIcon } from '@repo/packages-ui/icons/brand-icons';
 import { motion } from 'framer-motion';
 import { ArrowRight, ImageIcon } from 'lucide-react';
 
@@ -35,22 +34,11 @@ export function Hero() {
             Always.
           </p>
 
-          <div className="flex flex-wrap items-center justify-center gap-4 pt-2">
+          <div className="flex items-center justify-center pt-2">
             <Button asChild size="lg">
               <a href={siteConfig.chromeWebStore} className="gap-2">
                 Add to Chrome — it&apos;s free
                 <ArrowRight className="h-4 w-4" />
-              </a>
-            </Button>
-            <Button asChild variant="outline" size="lg">
-              <a
-                href={siteConfig.github}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="gap-2"
-              >
-                <GitHubIcon className="h-4 w-4" />
-                View source
               </a>
             </Button>
           </div>
