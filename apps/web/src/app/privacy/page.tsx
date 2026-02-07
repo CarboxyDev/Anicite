@@ -13,19 +13,19 @@ const HIGHLIGHTS = [
     icon: HardDrive,
     title: '100% local storage',
     description:
-      'Your data never leaves your device. Everything is stored in chrome.storage.local — no servers involved.',
+      'Your data never leaves your device. Everything is stored in chrome storage. No servers involved.',
   },
   {
     icon: WifiOff,
-    title: 'Zero outbound requests',
+    title: 'Zero network requests',
     description:
-      'Anicite makes no network requests whatsoever. No analytics, no telemetry, no tracking pixels.',
+      'Anicite makes no network requests whatsoever. No analytics, no telemetry.',
   },
   {
     icon: Trash2,
     title: 'Delete anytime',
     description:
-      'Clear all data in one click from settings, or uninstall the extension. Your data disappears instantly.',
+      'Clear all your data in one click from settings, or uninstall the extension. Your data disappears instantly.',
   },
   {
     icon: Shield,
@@ -43,7 +43,6 @@ const SECTIONS = [
       '• **Website hostnames and paths** you visit (e.g. github.com/notifications) — query strings and URL fragments are never stored',
       '• **Active time** spent on each site, measured by tab focus and visibility',
       '• **Interaction counts**: clicks, scroll distance, and tab switches',
-      '• **Session data**: grouped by 30-minute inactivity gaps',
       '• **Timestamps**: aggregated into daily and hourly rollups',
       'Long URL paths are truncated to 180 characters. Incognito browsing is never tracked.',
     ],
