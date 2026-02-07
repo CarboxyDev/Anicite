@@ -19,6 +19,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from '../../components/ui/select';
+import { Tooltip } from '../../components/ui/tooltip';
 import {
   CATEGORIES,
   type Category,
@@ -44,13 +45,40 @@ import {
 } from '../../lib/storage';
 import { getUrlParts } from '../../lib/url';
 
-const CATEGORY_COLORS: Record<Category, { bg: string; text: string }> = {
-  productive: { bg: 'bg-emerald-500', text: 'text-emerald-500' },
-  social: { bg: 'bg-blue-500', text: 'text-blue-500' },
-  entertainment: { bg: 'bg-purple-500', text: 'text-purple-500' },
-  shopping: { bg: 'bg-amber-500', text: 'text-amber-500' },
-  reference: { bg: 'bg-fuchsia-500', text: 'text-fuchsia-500' },
-  other: { bg: 'bg-zinc-400', text: 'text-zinc-400' },
+const CATEGORY_COLORS: Record<
+  Category,
+  { bg: string; text: string; border: string }
+> = {
+  productive: {
+    bg: 'bg-emerald-500',
+    text: 'text-emerald-500',
+    border: 'border-l-emerald-500',
+  },
+  social: {
+    bg: 'bg-blue-500',
+    text: 'text-blue-500',
+    border: 'border-l-blue-500',
+  },
+  entertainment: {
+    bg: 'bg-purple-500',
+    text: 'text-purple-500',
+    border: 'border-l-purple-500',
+  },
+  shopping: {
+    bg: 'bg-amber-500',
+    text: 'text-amber-500',
+    border: 'border-l-amber-500',
+  },
+  reference: {
+    bg: 'bg-fuchsia-500',
+    text: 'text-fuchsia-500',
+    border: 'border-l-fuchsia-500',
+  },
+  other: {
+    bg: 'bg-zinc-400',
+    text: 'text-zinc-400',
+    border: 'border-l-zinc-400',
+  },
 };
 
 const DEFAULT_STATS: StatsTotals = {
@@ -154,6 +182,29 @@ function ScrollIntensityTooltip() {
         <div className="ml-1 h-2 w-2 -translate-y-1 rotate-45 rounded-sm bg-zinc-900" />
       </div>
     </div>
+  );
+}
+
+interface AnimatedValueProps {
+  value: string;
+  className?: string;
+}
+
+function AnimatedValue({ value, className = '' }: AnimatedValueProps) {
+  const [animationKey, setAnimationKey] = useState(0);
+  const prevValueRef = useRef(value);
+
+  useEffect(() => {
+    if (prevValueRef.current !== value) {
+      prevValueRef.current = value;
+      setAnimationKey((k) => k + 1);
+    }
+  }, [value]);
+
+  return (
+    <span key={animationKey} className={`stat-animate ${className}`}>
+      {value}
+    </span>
   );
 }
 
@@ -329,30 +380,32 @@ export function App() {
               <h1 className="text-lg font-semibold">Today</h1>
             </div>
             <div className="-mr-1 flex items-center gap-0.5">
-              <button
-                className="text-muted-foreground hover:text-foreground hover:bg-muted rounded-md p-1.5 transition-colors"
-                onClick={() =>
-                  chrome.tabs.create({
-                    url: chrome.runtime.getURL('insights.html'),
-                  })
-                }
-                title="Insights"
-                type="button"
-              >
-                <BarChart3 className="h-4 w-4" />
-              </button>
-              <button
-                className="text-muted-foreground hover:text-foreground hover:bg-muted rounded-md p-1.5 transition-colors"
-                onClick={() =>
-                  chrome.tabs.create({
-                    url: chrome.runtime.getURL('options.html'),
-                  })
-                }
-                title="Settings"
-                type="button"
-              >
-                <SettingsIcon className="h-4 w-4" />
-              </button>
+              <Tooltip label="Insights">
+                <button
+                  className="text-muted-foreground hover:text-foreground hover:bg-muted rounded-md p-1.5 transition-colors"
+                  onClick={() =>
+                    chrome.tabs.create({
+                      url: chrome.runtime.getURL('insights.html'),
+                    })
+                  }
+                  type="button"
+                >
+                  <BarChart3 className="h-4 w-4" />
+                </button>
+              </Tooltip>
+              <Tooltip label="Settings">
+                <button
+                  className="text-muted-foreground hover:text-foreground hover:bg-muted rounded-md p-1.5 transition-colors"
+                  onClick={() =>
+                    chrome.tabs.create({
+                      url: chrome.runtime.getURL('options.html'),
+                    })
+                  }
+                  type="button"
+                >
+                  <SettingsIcon className="h-4 w-4" />
+                </button>
+              </Tooltip>
             </div>
           </div>
 
@@ -364,7 +417,7 @@ export function App() {
               <div>
                 <p className="text-muted-foreground text-[11px]">Active</p>
                 <p className="font-semibold">
-                  {formatDuration(todayTotals.activeMs)}
+                  <AnimatedValue value={formatDuration(todayTotals.activeMs)} />
                 </p>
               </div>
             </div>
@@ -374,7 +427,9 @@ export function App() {
               </div>
               <div>
                 <p className="text-muted-foreground text-[11px]">Visits</p>
-                <p className="font-semibold">{todayTotals.visits}</p>
+                <p className="font-semibold">
+                  <AnimatedValue value={String(todayTotals.visits)} />
+                </p>
               </div>
             </div>
             <div className="flex items-center gap-2">
@@ -384,9 +439,13 @@ export function App() {
               <div>
                 <p className="text-muted-foreground text-[11px]">Productive</p>
                 <p className="font-semibold">
-                  {todayTotals.activeMs > 0
-                    ? `${Math.round((todayTotals.productiveMs / todayTotals.activeMs) * 100)}%`
-                    : '–'}
+                  <AnimatedValue
+                    value={
+                      todayTotals.activeMs > 0
+                        ? `${Math.round((todayTotals.productiveMs / todayTotals.activeMs) * 100)}%`
+                        : '–'
+                    }
+                  />
                 </p>
               </div>
             </div>
@@ -396,13 +455,17 @@ export function App() {
               </div>
               <div>
                 <p className="text-muted-foreground text-[11px]">Sites</p>
-                <p className="font-semibold">{todayTotals.sitesCount}</p>
+                <p className="font-semibold">
+                  <AnimatedValue value={String(todayTotals.sitesCount)} />
+                </p>
               </div>
             </div>
           </div>
         </div>
 
-        <div className="card space-y-3">
+        <div
+          className={`card space-y-3 border-l-2 transition-colors ${currentHost ? CATEGORY_COLORS[currentCategory].border : 'border-l-transparent'}`}
+        >
           <div className="flex items-start justify-between gap-2">
             <div>
               <div className="flex items-baseline gap-1.5">
@@ -421,23 +484,6 @@ export function App() {
                   {currentHost ?? (isLoading ? 'Loading...' : 'No active tab')}
                 </p>
               </div>
-              {currentHost && (
-                <button
-                  className="text-muted-foreground hover:text-foreground mt-0.5 text-[10px] hover:underline"
-                  onClick={async () => {
-                    const newExcludeHosts = isExcluded
-                      ? settings.excludeHosts.filter((h) => h !== currentHost)
-                      : [...settings.excludeHosts, currentHost];
-                    const next = await updateSettings({
-                      excludeHosts: newExcludeHosts,
-                    });
-                    setSettings(next);
-                  }}
-                  type="button"
-                >
-                  {isExcluded ? 'Include this site' : 'Exclude this site'}
-                </button>
-              )}
             </div>
             {currentHost && (
               <Select
@@ -478,7 +524,7 @@ export function App() {
                 <div>
                   <p className="text-muted-foreground text-[11px]">Time</p>
                   <p className="font-semibold">
-                    {formatDuration(stats.activeMs)}
+                    <AnimatedValue value={formatDuration(stats.activeMs)} />
                   </p>
                 </div>
               </div>
@@ -488,7 +534,9 @@ export function App() {
                 </div>
                 <div>
                   <p className="text-muted-foreground text-[11px]">Clicks</p>
-                  <p className="font-semibold">{stats.clicks}</p>
+                  <p className="font-semibold">
+                    <AnimatedValue value={String(stats.clicks)} />
+                  </p>
                 </div>
               </div>
               <div className="flex items-center gap-2">
@@ -507,9 +555,10 @@ export function App() {
                     );
                     return (
                       <p className="font-semibold">
-                        <span className={getScrollIntensityColor(intensity)}>
-                          {formatScrollIntensity(intensity)}
-                        </span>
+                        <AnimatedValue
+                          value={formatScrollIntensity(intensity)}
+                          className={getScrollIntensityColor(intensity)}
+                        />
                         <span className="text-muted-foreground ml-0.5 text-[10px] font-normal">
                           /min
                         </span>
@@ -524,7 +573,9 @@ export function App() {
                 </div>
                 <div>
                   <p className="text-muted-foreground text-[11px]">Switches</p>
-                  <p className="font-semibold">{stats.tabSwitches}</p>
+                  <p className="font-semibold">
+                    <AnimatedValue value={String(stats.tabSwitches)} />
+                  </p>
                 </div>
               </div>
             </div>

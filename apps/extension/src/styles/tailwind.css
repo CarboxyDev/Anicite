@@ -349,4 +349,19 @@
   .dark .heatmap-cell-bar.heatmap-high {
     background-color: oklch(0.55 0.18 291);
   }
+
+  @keyframes stat-pulse {
+    0% {
+      opacity: 0.6;
+      transform: scale(0.98);
+    }
+    100% {
+      opacity: 1;
+      transform: scale(1);
+    }
+  }
+
+  .stat-animate {
+    animation: stat-pulse 200ms ease-out;
+  }
 }
