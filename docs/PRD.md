@@ -50,7 +50,8 @@
 | Clicks | ✅ | Counted via document click events |
 | Scroll distance | ✅ | Tracked as screens scrolled (normalized by viewport height) |
 | Tab switches | ✅ | Tracked when visibility changes to hidden |
-| Sessions | ✅ | New session after 30-minute gap from last activity |
+| Sessions | ✅ | New session after 30-minute gap from last activity (tracked internally, not displayed in UI) |
+| Productive % | ✅ | Percentage of time spent on productive+reference categories |
 
 ### Data Granularity Options
 
@@ -82,7 +83,7 @@ Built-in categorization with user overrides:
 ### UI Surfaces
 
 #### 1. Popup (320px width)
-- Today's quick stats (active time, visits, sessions, sites count)
+- Today's quick stats (active time, visits, productive %, sites count)
 - Current site stats (time, clicks, scroll intensity, tab switches)
 - Favicon display for current site
 - Category selector for current site
@@ -92,7 +93,7 @@ Built-in categorization with user overrides:
 
 #### 2. Insights Page
 - Period selector (Today / 7 Days / 30 Days / All Time)
-- Overview cards (active time, visits, sessions, sites)
+- Overview cards (active time, visits, productive %, sites)
 - **Time by Category** - Interactive donut chart with legend
 - **Daily Activity** - Bar chart showing daily breakdown
 - **Hourly Patterns** - Heatmap (weekly for 7+ days, hourly bar for Today)

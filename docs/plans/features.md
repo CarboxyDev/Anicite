@@ -26,7 +26,6 @@ Derived composite score indicating browsing health.
 
 **Factors:**
 - Scroll intensity (high = negative)
-- Session fragmentation (many short sessions = distracted)
 - Category balance (productive vs entertainment ratio)
 - Tab switch frequency
 

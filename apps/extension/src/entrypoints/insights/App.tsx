@@ -9,7 +9,7 @@ import {
   MousePointerClick,
   MoveVertical,
   Settings as SettingsIcon,
-  SwatchBook,
+  Zap,
 } from 'lucide-react';
 import {
   useCallback,
@@ -744,12 +744,24 @@ export function App() {
               </div>
               <div className="flex items-center gap-3">
                 <div className="bg-primary/10 text-primary flex h-10 w-10 shrink-0 items-center justify-center rounded-lg">
-                  <SwatchBook className="h-5 w-5" />
+                  <Zap className="h-5 w-5" />
                 </div>
                 <div>
-                  <p className="text-muted-foreground text-xs">Sessions</p>
+                  <p className="text-muted-foreground text-xs">Productive</p>
                   <p className="text-lg font-semibold">
-                    {data?.totals.sessions ?? 0}
+                    {(() => {
+                      const productiveMs = categoryStats
+                        .filter(
+                          (c) =>
+                            c.category === 'productive' ||
+                            c.category === 'reference'
+                        )
+                        .reduce((sum, c) => sum + c.stats.activeMs, 0);
+                      const totalMs = data?.totals.activeMs ?? 0;
+                      return totalMs > 0
+                        ? `${Math.round((productiveMs / totalMs) * 100)}%`
+                        : '–';
+                    })()}
                   </p>
                 </div>
               </div>
@@ -1058,14 +1070,6 @@ export function App() {
                             </p>
                             <p className="text-xs font-medium">
                               {site.stats.visits}
-                            </p>
-                          </div>
-                          <div>
-                            <p className="text-muted-foreground text-[10px]">
-                              Sessions
-                            </p>
-                            <p className="text-xs font-medium">
-                              {site.stats.sessions}
                             </p>
                           </div>
                           <div>

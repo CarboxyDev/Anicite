@@ -8,7 +8,7 @@ import {
   HardDrive,
   type LucideIcon,
   Moon,
-  Timer,
+  Zap,
 } from 'lucide-react';
 
 const FEATURES = [
@@ -31,10 +31,10 @@ const FEATURES = [
       'Sites are auto-categorized as productive, social, entertainment, and more. Override anytime.',
   },
   {
-    icon: Timer,
-    title: 'Session tracking',
+    icon: Zap,
+    title: 'Productivity insights',
     description:
-      'Understand your browsing sessions with automatic detection after 30 minutes of inactivity.',
+      'See your productive percentage at a glance. Know instantly how much of your time is spent on work vs distractions.',
   },
   {
     icon: Moon,

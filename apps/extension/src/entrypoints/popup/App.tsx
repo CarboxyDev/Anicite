@@ -8,7 +8,7 @@ import {
   MousePointerClick,
   MoveVertical,
   Settings as SettingsIcon,
-  SwatchBook,
+  Zap,
 } from 'lucide-react';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 
@@ -22,6 +22,7 @@ import {
 import {
   CATEGORIES,
   type Category,
+  type Category as CategoryType,
   CATEGORY_LIST,
   getCategoryForHost,
 } from '../../lib/categories';
@@ -61,13 +62,23 @@ const DEFAULT_STATS: StatsTotals = {
   tabSwitches: 0,
 };
 
+const PRODUCTIVE_CATEGORIES: CategoryType[] = ['productive', 'reference'];
+
 interface TodayTotals extends StatsTotals {
   sitesCount: number;
+  productiveMs: number;
 }
 
-function computeTodayTotals(store: Store): TodayTotals {
+function computeTodayTotals(
+  store: Store,
+  siteCategories: Record<string, CategoryType>
+): TodayTotals {
   const dateKey = getLocalDateKey();
-  const totals: TodayTotals = { ...DEFAULT_STATS, sitesCount: 0 };
+  const totals: TodayTotals = {
+    ...DEFAULT_STATS,
+    sitesCount: 0,
+    productiveMs: 0,
+  };
   const uniqueHosts = new Set<string>();
 
   for (const entry of Object.values(store.pages)) {
@@ -80,6 +91,11 @@ function computeTodayTotals(store: Store): TodayTotals {
     totals.tabSwitches += day.tabSwitches;
     totals.scrollDistance += day.scrollDistance ?? 0;
     uniqueHosts.add(entry.host);
+
+    const category = getCategoryForHost(entry.host, siteCategories);
+    if (PRODUCTIVE_CATEGORIES.includes(category)) {
+      totals.productiveMs += day.activeMs;
+    }
   }
 
   totals.sitesCount = uniqueHosts.size;
@@ -149,6 +165,7 @@ export function App() {
   const [todayTotals, setTodayTotals] = useState<TodayTotals>({
     ...DEFAULT_STATS,
     sitesCount: 0,
+    productiveMs: 0,
   });
   const [isLoading, setIsLoading] = useState(true);
   const currentKeyRef = useRef<string | null>(null);
@@ -184,17 +201,20 @@ export function App() {
     setSettings(next);
   };
 
-  const updateFromStore = useCallback((store: Store) => {
-    const dateKey = getLocalDateKey();
-    const key = currentKeyRef.current;
+  const updateFromStore = useCallback(
+    (store: Store, categories: Record<string, CategoryType>) => {
+      const dateKey = getLocalDateKey();
+      const key = currentKeyRef.current;
 
-    if (key) {
-      const page = store.pages[key];
-      setStats(page?.byDate[dateKey] ?? DEFAULT_STATS);
-    }
+      if (key) {
+        const page = store.pages[key];
+        setStats(page?.byDate[dateKey] ?? DEFAULT_STATS);
+      }
 
-    setTodayTotals(computeTodayTotals(store));
-  }, []);
+      setTodayTotals(computeTodayTotals(store, categories));
+    },
+    []
+  );
 
   useEffect(() => {
     const init = async () => {
@@ -207,7 +227,7 @@ export function App() {
       });
 
       const store = await getStore();
-      updateFromStore(store);
+      updateFromStore(store, storedSettings.siteCategories);
 
       if (tab?.url && tab.id) {
         const urlParts = getUrlParts(tab.url, storedSettings.dataGranularity);
@@ -229,12 +249,17 @@ export function App() {
     ) => {
       if (areaName !== 'local') return;
 
+      let currentSettings = settings;
       if (changes[SETTINGS_KEY]?.newValue) {
-        setSettings(changes[SETTINGS_KEY].newValue as Settings);
+        currentSettings = changes[SETTINGS_KEY].newValue as Settings;
+        setSettings(currentSettings);
       }
 
       if (changes[STORAGE_KEY]?.newValue) {
-        updateFromStore(changes[STORAGE_KEY].newValue as Store);
+        updateFromStore(
+          changes[STORAGE_KEY].newValue as Store,
+          currentSettings.siteCategories
+        );
       }
     };
 
@@ -242,7 +267,7 @@ export function App() {
     return () => {
       chrome.storage.onChanged.removeListener(handleStorageChange);
     };
-  }, [updateFromStore]);
+  }, [updateFromStore, settings]);
 
   if (!isOnboardingComplete) {
     return (
@@ -354,11 +379,15 @@ export function App() {
             </div>
             <div className="flex items-center gap-2">
               <div className="bg-primary/10 text-primary flex h-7 w-7 shrink-0 items-center justify-center rounded-md">
-                <SwatchBook className="h-3.5 w-3.5" />
+                <Zap className="h-3.5 w-3.5" />
               </div>
               <div>
-                <p className="text-muted-foreground text-[11px]">Sessions</p>
-                <p className="font-semibold">{todayTotals.sessions}</p>
+                <p className="text-muted-foreground text-[11px]">Productive</p>
+                <p className="font-semibold">
+                  {todayTotals.activeMs > 0
+                    ? `${Math.round((todayTotals.productiveMs / todayTotals.activeMs) * 100)}%`
+                    : '–'}
+                </p>
               </div>
             </div>
             <div className="flex items-center gap-2">

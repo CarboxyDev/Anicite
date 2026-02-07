@@ -25,7 +25,7 @@ const steps = [
     icon: BarChart3,
     title: 'Rich insights with breakdowns',
     description:
-      'Track time spent, page visits, clicks, scroll patterns, and sessions. See patterns with heatmaps and category breakdowns.',
+      'Track time spent, page visits, clicks, and scroll patterns. See your productivity with heatmaps and category breakdowns.',
   },
   {
     icon: SettingsIcon,
