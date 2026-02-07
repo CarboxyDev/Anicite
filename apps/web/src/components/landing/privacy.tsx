@@ -18,9 +18,9 @@ const PROMISES = [
   },
   {
     icon: WifiOff,
-    title: 'Zero network requests',
+    title: 'No tracking servers',
     description:
-      'Anicite makes exactly zero requests to any external server. No analytics, no telemetry, no polling.',
+      'Your browsing data never leaves your device. No external servers, no analytics, no telemetry.',
   },
   {
     icon: EyeOff,

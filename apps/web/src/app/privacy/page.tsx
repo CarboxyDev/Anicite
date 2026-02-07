@@ -17,9 +17,9 @@ const HIGHLIGHTS = [
   },
   {
     icon: WifiOff,
-    title: 'Zero network requests',
+    title: 'Minimal network use',
     description:
-      'Anicite makes no network requests whatsoever. No analytics, no telemetry.',
+      'No analytics, no telemetry. Only fetches site favicons from Google for display purposes.',
   },
   {
     icon: Trash2,
@@ -66,9 +66,11 @@ const SECTIONS = [
     ],
   },
   {
-    title: 'Third-party sharing',
+    title: 'Third-party services',
     content: [
-      "There is nothing to share. Since your data never leaves your device, there is no mechanism for third-party access. Anicite has no servers, no analytics, and no advertising. We couldn't access your data even if we wanted to.",
+      'Anicite uses one external service:',
+      "• **Google Favicon API** — to display website icons in the extension UI. When you visit a site, we fetch its favicon from Google's public service (google.com/s2/favicons). This request includes only the domain name, no other browsing data. Favicons are cached locally for 7 days to minimize requests.",
+      "Your browsing data itself is never sent anywhere. Anicite has no servers, no analytics, and no advertising. We couldn't access your browsing history even if we wanted to.",
     ],
   },
   {
