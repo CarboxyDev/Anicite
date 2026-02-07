@@ -6,7 +6,8 @@ export default defineConfig({
   outDirTemplate: '{{browser}}-mv{{manifestVersion}}{{modeSuffix}}',
   manifest: {
     name: 'Anicite',
-    description: 'Chrome analytics done right',
+    description:
+      'Local-only analytics of your browsing activity. Understand your habits without compromising your privacy.',
     manifest_version: 3,
     incognito: 'not_allowed',
     permissions: ['storage', 'unlimitedStorage'],
