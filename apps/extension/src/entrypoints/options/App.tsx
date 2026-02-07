@@ -7,10 +7,12 @@ import {
   Globe,
   HardDrive,
   Lock,
+  Plus,
   Search,
   Server,
   Shield,
   Trash2,
+  X,
 } from 'lucide-react';
 import { useEffect, useMemo, useState } from 'react';
 
@@ -668,70 +670,129 @@ export function App() {
             </div>
           </section>
 
-          <section className="card">
-            <div>
-              <h2 className="font-semibold">Excluded Sites</h2>
-              <p className="text-muted-foreground mt-1 text-xs">
-                Sites in this list will not be tracked. Subdomains are included.
-              </p>
-            </div>
-
-            <div className="mt-4 space-y-2">
-              <div className="flex gap-2">
-                <input
-                  type="text"
-                  className={`input flex-1 ${hostError ? 'border-destructive' : ''}`}
-                  placeholder="example.com"
-                  value={newHost}
-                  onChange={(e) => {
-                    setNewHost(e.target.value);
-                    setHostError(null);
-                  }}
-                  onKeyDown={(e) => {
-                    if (e.key === 'Enter') {
-                      void handleAddExclusion();
+          <section className="card overflow-hidden p-0">
+            <div className="flex items-center justify-between gap-4 p-4">
+              <div className="flex items-center gap-3">
+                <div className="bg-muted flex h-10 w-10 items-center justify-center rounded-xl">
+                  <EyeOff className="text-muted-foreground h-5 w-5" />
+                </div>
+                <div>
+                  <div className="flex items-center gap-2">
+                    <h2 className="font-semibold">Excluded Sites</h2>
+                    {settings.excludeHosts.length > 0 && (
+                      <span className="bg-muted text-muted-foreground rounded-full px-2 py-0.5 text-[10px] font-semibold">
+                        {settings.excludeHosts.length} site
+                        {settings.excludeHosts.length !== 1 ? 's' : ''}
+                      </span>
+                    )}
+                  </div>
+                  <p className="text-muted-foreground mt-0.5 text-xs">
+                    Sites in this list won't be tracked
+                  </p>
+                </div>
+              </div>
+              {settings.excludeHosts.length > 1 && (
+                <button
+                  className="text-muted-foreground hover:text-destructive flex items-center gap-1 text-xs transition-colors"
+                  onClick={async () => {
+                    if (
+                      window.confirm(
+                        'Are you sure you want to remove all excluded sites?'
+                      )
+                    ) {
+                      const next = await updateSettings({ excludeHosts: [] });
+                      setSettings(next);
                     }
                   }}
-                />
+                  type="button"
+                >
+                  <Trash2 className="h-3.5 w-3.5" />
+                  Clear all
+                </button>
+              )}
+            </div>
+
+            <div className="border-border border-t p-4">
+              <div className="flex gap-2">
+                <div className="relative flex-1">
+                  <Globe className="text-muted-foreground pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2" />
+                  <input
+                    type="text"
+                    className={`input w-full pl-9 ${hostError ? 'border-destructive focus:border-destructive' : ''}`}
+                    placeholder="Enter a domain to exclude..."
+                    value={newHost}
+                    onChange={(e) => {
+                      setNewHost(e.target.value);
+                      setHostError(null);
+                    }}
+                    onKeyDown={(e) => {
+                      if (e.key === 'Enter') {
+                        void handleAddExclusion();
+                      }
+                    }}
+                  />
+                </div>
                 <button
-                  className="btn btn-secondary"
+                  className="btn btn-primary flex items-center gap-1.5"
                   onClick={() => void handleAddExclusion()}
                   type="button"
                 >
+                  <Plus className="h-4 w-4" />
                   Add
                 </button>
               </div>
               {hostError && (
-                <p className="text-destructive text-xs">{hostError}</p>
+                <p className="text-destructive mt-2 flex items-center gap-1.5 text-xs">
+                  <span className="bg-destructive inline-block h-1 w-1 rounded-full" />
+                  {hostError}
+                </p>
+              )}
+
+              {settings.excludeHosts.length > 0 ? (
+                <div className="mt-4 space-y-1.5">
+                  {settings.excludeHosts.map((host) => (
+                    <div
+                      key={host}
+                      className="border-border bg-muted/30 hover:bg-muted/50 hover:border-muted-foreground/20 group flex items-center justify-between gap-3 rounded-lg border px-3 py-2.5 transition-all"
+                    >
+                      <div className="flex min-w-0 items-center gap-2.5">
+                        <div className="bg-background flex h-7 w-7 shrink-0 items-center justify-center rounded-md shadow-sm">
+                          <Favicon host={host} size={16} />
+                        </div>
+                        <div className="min-w-0">
+                          <span className="block truncate text-sm font-medium leading-tight">
+                            {host}
+                          </span>
+                          <span className="text-muted-foreground text-[10px]">
+                            Includes all subdomains
+                          </span>
+                        </div>
+                      </div>
+                      <button
+                        className="text-muted-foreground hover:text-destructive hover:bg-destructive/10 flex h-7 w-7 shrink-0 items-center justify-center rounded-md transition-all"
+                        onClick={() => void handleRemoveExclusion(host)}
+                        type="button"
+                        title="Remove from exclusion list"
+                      >
+                        <X className="h-4 w-4" />
+                      </button>
+                    </div>
+                  ))}
+                </div>
+              ) : (
+                <div className="mt-6 flex flex-col items-center justify-center py-6 text-center">
+                  <div className="bg-muted/50 mb-4 flex h-16 w-16 items-center justify-center rounded-2xl">
+                    <Shield className="text-muted-foreground h-8 w-8" />
+                  </div>
+                  <h3 className="text-sm font-medium">
+                    All sites are being tracked
+                  </h3>
+                  <p className="text-muted-foreground mt-1 max-w-[240px] text-xs">
+                    Add domains above to exclude specific sites from tracking.
+                  </p>
+                </div>
               )}
             </div>
-
-            {settings.excludeHosts.length > 0 ? (
-              <div className="mt-4 space-y-2">
-                {settings.excludeHosts.map((host) => (
-                  <div
-                    key={host}
-                    className="border-border bg-muted/30 flex items-center justify-between rounded-md border px-3 py-2"
-                  >
-                    <div className="flex items-center gap-2">
-                      <Favicon host={host} size={16} />
-                      <span className="text-sm leading-snug">{host}</span>
-                    </div>
-                    <button
-                      className="text-destructive text-xs hover:underline"
-                      onClick={() => void handleRemoveExclusion(host)}
-                      type="button"
-                    >
-                      Remove
-                    </button>
-                  </div>
-                ))}
-              </div>
-            ) : (
-              <p className="text-muted-foreground mt-4 text-xs">
-                No excluded sites. All sites are being tracked.
-              </p>
-            )}
           </section>
 
           <section className="card">
