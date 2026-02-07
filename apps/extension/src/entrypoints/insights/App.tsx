@@ -245,6 +245,7 @@ function HeatmapCell({
       className={`heatmap-cell heatmap-${cell.intensity} relative`}
       onMouseEnter={() => setShowTooltip(true)}
       onMouseLeave={() => setShowTooltip(false)}
+      role="gridcell"
     >
       {showTooltip && (
         <div className="bg-popover text-popover-foreground border-border absolute bottom-full left-1/2 z-20 mb-2 -translate-x-1/2 whitespace-nowrap rounded border px-2 py-1 text-xs shadow-md">
@@ -813,6 +814,7 @@ export function App() {
                         }}
                         onMouseEnter={() => setHoveredCategory(cat.category)}
                         onMouseLeave={() => setHoveredCategory(null)}
+                        role="listitem"
                       >
                         <div className="flex items-center justify-between gap-3">
                           <div className="flex items-center gap-2">

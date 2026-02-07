@@ -26,6 +26,7 @@ export function Tooltip({
       className="relative inline-flex"
       onMouseEnter={() => setIsVisible(true)}
       onMouseLeave={() => setIsVisible(false)}
+      role="tooltip"
     >
       {children}
       <div
