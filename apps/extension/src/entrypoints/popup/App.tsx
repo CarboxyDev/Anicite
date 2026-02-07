@@ -106,9 +106,8 @@ function formatScrollIntensity(intensity: number | null): string {
 
 function getScrollIntensityColor(intensity: number | null): string {
   if (intensity === null) return '';
-  if (intensity < 1) return 'text-green-500';
-  if (intensity < 5) return 'text-yellow-500';
-  return 'text-red-500';
+  if (intensity >= 5) return 'text-red-500';
+  return '';
 }
 
 function ScrollIntensityTooltip() {
@@ -123,16 +122,16 @@ function ScrollIntensityTooltip() {
           </p>
           <div className="space-y-1.5 text-[11px]">
             <div className="flex items-baseline gap-2">
-              <span className="w-6 font-semibold text-green-400">&lt; 1</span>
+              <span className="w-6 font-semibold text-zinc-400">&lt; 1</span>
               <span className="text-zinc-300">Focused reading</span>
             </div>
             <div className="flex items-baseline gap-2">
-              <span className="w-6 font-semibold text-yellow-400">1–5</span>
+              <span className="w-6 font-semibold text-zinc-400">1–5</span>
               <span className="text-zinc-300">Normal browsing</span>
             </div>
             <div className="flex items-baseline gap-2">
               <span className="w-6 font-semibold text-red-400">5+</span>
-              <span className="text-zinc-300">Doom scrolling</span>
+              <span className="text-zinc-300">Mindless scrolling</span>
             </div>
           </div>
         </div>
