@@ -1169,13 +1169,7 @@ export function App() {
                       </SelectContent>
                     </Select>
                     <button
-                      className="btn btn-outline hover:text-destructive h-9 w-full text-xs"
-                      style={
-                        {
-                          '--hover-bg': 'var(--destructive)',
-                          '--hover-border': 'var(--destructive)',
-                        } as React.CSSProperties
-                      }
+                      className="btn btn-primary h-9 w-full text-xs"
                       onClick={() => void handlePruneData()}
                       disabled={isPruning}
                       type="button"
