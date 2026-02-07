@@ -478,7 +478,7 @@ export function App() {
                   </span>
                 )}
               </div>
-              <div className="mt-1 flex items-center gap-2">
+              <div className="mt-2 flex items-center gap-2">
                 {currentHost && <Favicon host={currentHost} size={18} />}
                 <p className="font-semibold leading-tight">
                   {currentHost ?? (isLoading ? 'Loading...' : 'No active tab')}
@@ -493,7 +493,7 @@ export function App() {
                 }
               >
                 <SelectTrigger
-                  className={`h-6 w-fit gap-1.5 border-none bg-transparent p-0 text-xs shadow-none hover:bg-transparent focus:ring-0 ${CATEGORY_COLORS[currentCategory].text}`}
+                  className={`h-auto w-fit gap-1.5 border-none bg-transparent p-0 text-xs shadow-none hover:bg-transparent focus:ring-0 ${CATEGORY_COLORS[currentCategory].text}`}
                 >
                   <div className="flex items-center gap-1.5">
                     <SelectValue />
