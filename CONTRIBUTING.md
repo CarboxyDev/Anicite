@@ -1,4 +1,4 @@
-# Contributing to Blitzpack
+# Contributing to Anicite
 
 Thank you for your interest in contributing!
 
