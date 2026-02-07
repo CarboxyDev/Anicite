@@ -874,29 +874,46 @@ export function App() {
                 Active time per day
               </p>
               {data && data.byDate.length > 0 ? (
-                <div className="mt-4 space-y-2">
+                <div className="mt-4 space-y-1.5">
                   {data.byDate.map((day) => {
                     const pct =
                       maxDayMs > 0 ? (day.stats.activeMs / maxDayMs) * 100 : 0;
                     const isToday = day.date === todayKey;
+                    const hasActivity = day.stats.activeMs > 0;
                     return (
                       <div
                         key={day.date}
-                        className="flex items-center gap-3 text-xs"
+                        className="flex items-center gap-3 rounded-md px-2 py-1.5 text-xs transition-colors"
+                        style={
+                          isToday
+                            ? {
+                                backgroundColor:
+                                  'color-mix(in oklch, var(--primary) 6%, transparent)',
+                              }
+                            : undefined
+                        }
                       >
                         <span
-                          className={`w-10 shrink-0 ${isToday ? 'text-primary font-semibold' : 'text-muted-foreground'}`}
+                          className={`w-16 shrink-0 ${isToday ? 'text-primary font-semibold' : 'text-muted-foreground'}`}
                         >
                           {day.label}
                         </span>
-                        <div className="bg-muted h-5 flex-1 overflow-hidden rounded">
-                          <div
-                            className={`h-full rounded transition-all duration-300 ${isToday ? 'bg-primary' : 'bg-primary/60'}`}
-                            style={{ width: `${pct}%` }}
-                          />
+                        <div
+                          className="h-2 flex-1 overflow-hidden rounded-full"
+                          style={{
+                            backgroundColor:
+                              'color-mix(in oklch, var(--muted) 60%, transparent)',
+                          }}
+                        >
+                          {hasActivity && (
+                            <div
+                              className={`bg-primary h-full rounded-full transition-all duration-300 ${isToday ? '' : 'opacity-70'}`}
+                              style={{ width: `${Math.max(pct, 2)}%` }}
+                            />
+                          )}
                         </div>
                         <span
-                          className={`w-14 shrink-0 text-right font-medium ${isToday ? 'text-primary' : ''}`}
+                          className={`w-14 shrink-0 text-right tabular-nums ${isToday ? 'text-primary font-semibold' : hasActivity ? 'font-medium' : 'text-muted-foreground'}`}
                         >
                           {formatDuration(day.stats.activeMs)}
                         </span>

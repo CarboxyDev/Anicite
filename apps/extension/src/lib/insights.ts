@@ -57,7 +57,7 @@ function getRelativeLabel(dateKey: string): string | null {
 
   const yesterday = new Date();
   yesterday.setDate(yesterday.getDate() - 1);
-  if (dateKey === getLocalDateKey(yesterday)) return 'Yest';
+  if (dateKey === getLocalDateKey(yesterday)) return 'Yesterday';
 
   return null;
 }

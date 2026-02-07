@@ -1,7 +1,7 @@
 export const siteConfig = {
   name: 'Anicite',
   description:
-    'A privacy-first Chrome extension that helps you understand your browsing habits. All data stays on your device.',
+    'Local-only analytics of your browsing activity. Understand your habits without compromising your privacy.',
   url: 'https://anicite.carboxy.dev',
   github: 'https://github.com/CarboxyDev/anicite',
   chromeWebStore: '#',
