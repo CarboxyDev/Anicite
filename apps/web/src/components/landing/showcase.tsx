@@ -37,14 +37,19 @@ function ScreenFrame({ screen }: { screen: ScreenConfig }) {
   return (
     <div
       className={cn(
-        'border-border bg-card overflow-hidden rounded-xl border shadow-sm',
+        'border-border bg-card hover:border-primary/20 overflow-hidden rounded-xl border shadow-sm transition-all duration-300 hover:shadow-md',
         screen.narrow ? 'mx-auto w-full max-w-[280px]' : 'w-full'
       )}
     >
-      <div className="border-border flex items-center gap-1.5 border-b px-3 py-2.5">
-        <div className="h-2.5 w-2.5 rounded-full bg-red-400/60" />
-        <div className="h-2.5 w-2.5 rounded-full bg-yellow-400/60" />
-        <div className="h-2.5 w-2.5 rounded-full bg-green-400/60" />
+      <div className="border-border bg-muted/30 flex items-center gap-2 border-b px-3 py-2.5">
+        <div className="flex gap-1.5">
+          <div className="h-2.5 w-2.5 rounded-full bg-red-400/60" />
+          <div className="h-2.5 w-2.5 rounded-full bg-yellow-400/60" />
+          <div className="h-2.5 w-2.5 rounded-full bg-green-400/60" />
+        </div>
+        <div className="bg-muted/50 ml-1.5 flex h-5 w-full items-center rounded-md px-2">
+          <div className="bg-muted-foreground/20 h-1.5 w-12 rounded-full" />
+        </div>
       </div>
       <div
         className={cn(

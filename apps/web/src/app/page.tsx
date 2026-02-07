@@ -11,8 +11,8 @@ export default function Home() {
     <main className="flex flex-1 flex-col">
       <Navbar />
       <Hero />
-      <Features />
       <Showcase />
+      <Features />
       <HowItWorks />
       <Privacy />
       <Footer />

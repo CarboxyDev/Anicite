@@ -48,16 +48,19 @@ export function Hero() {
           initial={{ opacity: 0, y: 40 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.6, delay: 0.2 }}
-          className="mt-16 md:mt-20"
+          className="relative mt-16 md:mt-20"
         >
-          <div className="border-border bg-card mx-auto overflow-hidden rounded-xl border shadow-lg">
-            <div className="border-border flex items-center gap-1.5 border-b px-4 py-3">
-              <div className="h-3 w-3 rounded-full bg-red-400/80" />
-              <div className="h-3 w-3 rounded-full bg-yellow-400/80" />
-              <div className="h-3 w-3 rounded-full bg-green-400/80" />
-              <span className="text-muted-foreground ml-3 text-xs">
-                Anicite — Insights
-              </span>
+          <div className="from-primary/20 to-secondary/20 absolute -inset-x-4 -bottom-10 -top-16 -z-10 bg-gradient-to-t opacity-30 blur-3xl" />
+          <div className="border-border bg-card relative mx-auto overflow-hidden rounded-xl border shadow-2xl">
+            <div className="border-border bg-muted/30 flex items-center gap-2 border-b px-4 py-3">
+              <div className="flex gap-1.5">
+                <div className="h-3 w-3 rounded-full bg-red-400/80" />
+                <div className="h-3 w-3 rounded-full bg-yellow-400/80" />
+                <div className="h-3 w-3 rounded-full bg-green-400/80" />
+              </div>
+              <div className="bg-muted/50 ml-2 flex h-6 w-full max-w-md items-center rounded-md px-3">
+                <div className="bg-muted-foreground/20 h-1.5 w-20 rounded-full" />
+              </div>
             </div>
             <div className="group relative flex h-[300px] items-start justify-center overflow-hidden sm:h-[400px] md:h-[500px] lg:h-[600px]">
               {/* eslint-disable-next-line @next/next/no-img-element */}
