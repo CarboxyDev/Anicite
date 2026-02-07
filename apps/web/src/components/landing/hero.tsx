@@ -63,11 +63,15 @@ export function Hero() {
               </div>
             </div>
             <div className="group relative flex h-[300px] items-start justify-center overflow-hidden sm:h-[400px] md:h-[500px] lg:h-[600px]">
-              {/* eslint-disable-next-line @next/next/no-img-element */}
               <img
-                src="/hero-screenshot.png"
-                alt="App Screenshot"
-                className="w-[180%] max-w-none object-cover object-top transition-transform duration-[3s] ease-in-out group-hover:translate-y-[calc(-100%_+_300px)] sm:group-hover:translate-y-[calc(-100%_+_400px)] md:group-hover:translate-y-[calc(-100%_+_500px)] lg:group-hover:translate-y-[calc(-100%_+_600px)]"
+                src="/hero-screenshot-light.png"
+                alt="App Screenshot Light"
+                className="w-[180%] max-w-none object-cover object-top transition-transform duration-[3s] ease-in-out group-hover:translate-y-[calc(-100%_+_300px)] sm:group-hover:translate-y-[calc(-100%_+_400px)] md:group-hover:translate-y-[calc(-100%_+_500px)] lg:group-hover:translate-y-[calc(-100%_+_600px)] dark:hidden"
+              />
+              <img
+                src="/hero-screenshot-dark.png"
+                alt="App Screenshot Dark"
+                className="hidden w-[180%] max-w-none object-cover object-top transition-transform duration-[3s] ease-in-out group-hover:translate-y-[calc(-100%_+_300px)] sm:group-hover:translate-y-[calc(-100%_+_400px)] md:group-hover:translate-y-[calc(-100%_+_500px)] lg:group-hover:translate-y-[calc(-100%_+_600px)] dark:block"
               />
               <div className="from-background/20 pointer-events-none absolute inset-0 bg-gradient-to-t to-transparent opacity-0 transition-opacity group-hover:opacity-100" />
             </div>

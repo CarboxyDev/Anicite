@@ -16,20 +16,20 @@ const SCREENS: ScreenConfig[] = [
     title: 'Quick glance popup',
     description:
       "See today's stats, current site info, and category at a glance — without leaving your tab.",
-    imageSrc: '/showcase-popup.png',
+    imageSrc: '/showcase-popup',
     narrow: true,
   },
   {
     title: 'Insights dashboard',
     description:
       'Dive deep with interactive charts — time by category, daily activity, hourly patterns, and your top sites.',
-    imageSrc: '/showcase-insights.png',
+    imageSrc: '/showcase-insights',
   },
   {
     title: 'Your rules, your way',
     description:
       'Exclude sites, manage categories, choose tracking modes, and export data whenever you want.',
-    imageSrc: '/showcase-settings.png',
+    imageSrc: '/showcase-settings',
   },
 ];
 
@@ -59,10 +59,21 @@ function ScreenFrame({ screen }: { screen: ScreenConfig }) {
       >
         {/* eslint-disable-next-line @next/next/no-img-element */}
         <img
-          src={screen.imageSrc}
-          alt={screen.title}
+          src={`${screen.imageSrc}-light.png`}
+          alt={`${screen.title} Light`}
           className={cn(
-            'object-cover object-top transition-transform duration-[4s] ease-in-out',
+            'object-cover object-top transition-transform duration-[4s] ease-in-out dark:hidden',
+            screen.narrow
+              ? 'h-full w-full'
+              : 'w-[180%] max-w-none group-hover:translate-y-[calc(-100%_+_300px)] sm:group-hover:translate-y-[calc(-100%_+_400px)]'
+          )}
+        />
+        {/* eslint-disable-next-line @next/next/no-img-element */}
+        <img
+          src={`${screen.imageSrc}-dark.png`}
+          alt={`${screen.title} Dark`}
+          className={cn(
+            'hidden object-cover object-top transition-transform duration-[4s] ease-in-out dark:block',
             screen.narrow
               ? 'h-full w-full'
               : 'w-[180%] max-w-none group-hover:translate-y-[calc(-100%_+_300px)] sm:group-hover:translate-y-[calc(-100%_+_400px)]'
