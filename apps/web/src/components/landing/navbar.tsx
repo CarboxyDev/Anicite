@@ -24,16 +24,18 @@ export function Navbar() {
       transition={{ duration: 0.4 }}
       className="bg-background/80 border-border sticky top-0 z-50 border-b backdrop-blur-md"
     >
-      <div className="mx-auto flex h-16 max-w-6xl items-center justify-between px-6">
-        <a href="/" className="flex items-center gap-2.5">
-          {/* eslint-disable-next-line @next/next/no-img-element */}
-          <img src="/icon.svg" alt={siteConfig.name} className="h-8 w-8" />
-          <span className="text-foreground text-lg font-semibold tracking-tight">
-            {siteConfig.name}
-          </span>
-        </a>
+      <div className="mx-auto flex h-16 max-w-6xl items-center justify-between px-6 md:grid md:grid-cols-[1fr_auto_1fr]">
+        <div className="flex justify-start">
+          <a href="/" className="flex items-center gap-2.5">
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img src="/icon.svg" alt={siteConfig.name} className="h-8 w-8" />
+            <span className="text-foreground text-lg font-semibold tracking-tight">
+              {siteConfig.name}
+            </span>
+          </a>
+        </div>
 
-        <nav className="hidden items-center gap-8 md:flex">
+        <nav className="hidden items-center justify-center gap-8 md:flex">
           {NAV_LINKS.map((link) => (
             <a
               key={link.href}
@@ -45,7 +47,7 @@ export function Navbar() {
           ))}
         </nav>
 
-        <div className="flex items-center gap-3">
+        <div className="flex items-center justify-end gap-3">
           <ThemeToggle />
           <div className="hidden sm:inline-flex">
             <GitHubStarsButton />

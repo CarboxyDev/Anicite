@@ -53,7 +53,7 @@ export function GitHubStarsButton({
           <GitHubIcon className={compact ? 'h-3.5 w-3.5' : 'h-4 w-4'} />
           {!compact && 'Star on GitHub'}
         </span>
-        {starCount !== null && (
+        {starCount !== null ? (
           <>
             <span className={`bg-border w-px ${compact ? 'h-5' : 'h-6'}`} />
             <span
@@ -63,6 +63,18 @@ export function GitHubStarsButton({
                 className={`fill-yellow-400 text-yellow-400 ${compact ? 'h-3 w-3' : 'h-3.5 w-3.5'}`}
               />
               {formatStarCount(starCount)}
+            </span>
+          </>
+        ) : (
+          <>
+            <span className={`bg-border w-px ${compact ? 'h-5' : 'h-6'}`} />
+            <span
+              className={`flex items-center gap-1 ${compact ? 'px-2.5 py-1.5' : 'px-3 py-2'}`}
+            >
+              <Star
+                className={`text-muted-foreground/20 fill-muted-foreground/20 ${compact ? 'h-3 w-3' : 'h-3.5 w-3.5'}`}
+              />
+              <span className="bg-muted-foreground/20 h-4 w-8 animate-pulse rounded" />
             </span>
           </>
         )}

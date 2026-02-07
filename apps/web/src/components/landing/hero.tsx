@@ -18,7 +18,7 @@ export function Hero() {
           className="space-y-6"
         >
           <div className="border-border text-muted-foreground mx-auto inline-flex items-center gap-2 rounded-full border px-3.5 py-1.5 text-sm">
-            Browsing analytics
+            Open source
             <span className="bg-border h-3.5 w-px" />
             Free forever
           </div>
