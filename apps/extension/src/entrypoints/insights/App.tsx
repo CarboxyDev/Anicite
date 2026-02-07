@@ -31,6 +31,7 @@ import {
   CATEGORIES,
   type Category,
   CATEGORY_LIST,
+  CATEGORY_SVG_COLORS,
   getCategoryForHost,
 } from '../../lib/categories';
 import { SETTINGS_KEY, STORAGE_KEY } from '../../lib/constants';
@@ -77,15 +78,6 @@ const CATEGORY_COLORS: Record<Category, { bg: string; text: string }> = {
 };
 
 const SITES_PER_PAGE = 10;
-
-const CATEGORY_SVG_COLORS: Record<Category, string> = {
-  productive: '#10b981',
-  social: '#3b82f6',
-  entertainment: '#a855f7',
-  shopping: '#f59e0b',
-  reference: '#d946ef',
-  other: '#a1a1aa',
-};
 
 function DonutChart({
   data,

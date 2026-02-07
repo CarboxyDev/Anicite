@@ -24,6 +24,15 @@ export const CATEGORIES: Record<Category, CategoryConfig> = {
 
 export const CATEGORY_LIST = Object.keys(CATEGORIES) as Category[];
 
+export const CATEGORY_SVG_COLORS: Record<Category, string> = {
+  productive: '#10b981',
+  social: '#3b82f6',
+  entertainment: '#a855f7',
+  shopping: '#f59e0b',
+  reference: '#d946ef',
+  other: '#a1a1aa',
+};
+
 export const DEFAULT_CATEGORY_MAP: Record<string, Category> = {
   // Productive
   'github.com': 'productive',

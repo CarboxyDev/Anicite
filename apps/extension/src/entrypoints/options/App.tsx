@@ -1,4 +1,6 @@
 import {
+  ChevronLeft,
+  ChevronRight,
   Database,
   Download,
   EyeOff,
@@ -23,6 +25,7 @@ import {
   CATEGORIES,
   type Category,
   CATEGORY_LIST,
+  CATEGORY_SVG_COLORS,
   getCategoryForHost,
 } from '../../lib/categories';
 import { SETTINGS_KEY, STORAGE_KEY, STORE_VERSION } from '../../lib/constants';
@@ -49,6 +52,9 @@ import {
 } from '../../lib/storage';
 type ExportFormat = 'json' | 'csv';
 type ExportDateRange = 'all' | '7d' | '30d' | '90d';
+type CategorySortOption = 'activity' | 'name' | 'recent';
+
+const CATEGORY_SITES_PER_PAGE = 10;
 
 const DATE_RANGE_LABELS: Record<ExportDateRange, string> = {
   all: 'All time',
@@ -166,13 +172,95 @@ export function App() {
   const [isPruning, setIsPruning] = useState(false);
   const [pruneSuccess, setPruneSuccess] = useState<string | null>(null);
 
-  const filteredSites = useMemo(() => {
+  const [categorySortBy, setCategorySortBy] =
+    useState<CategorySortOption>('activity');
+  const [activeCategoryFilters, setActiveCategoryFilters] = useState<
+    Set<Category>
+  >(new Set());
+  const [categorySitesPage, setCategorySitesPage] = useState(0);
+
+  const categoryCounts = useMemo(() => {
+    const counts: Record<Category, number> = {
+      productive: 0,
+      social: 0,
+      entertainment: 0,
+      shopping: 0,
+      reference: 0,
+      other: 0,
+    };
+    for (const site of trackedSites) {
+      const cat = getCategoryForHost(site.host, settings.siteCategories);
+      counts[cat]++;
+    }
+    return counts;
+  }, [trackedSites, settings.siteCategories]);
+
+  const availableCategories = useMemo(
+    () => CATEGORY_LIST.filter((c) => categoryCounts[c] > 0),
+    [categoryCounts]
+  );
+
+  const processedCategorySites = useMemo(() => {
+    let sites = [...trackedSites];
+
     const search = categorySearch.toLowerCase().trim();
-    if (!search) return trackedSites;
-    return trackedSites.filter((site) =>
-      site.host.toLowerCase().includes(search)
-    );
-  }, [trackedSites, categorySearch]);
+    if (search) {
+      sites = sites.filter((site) => site.host.toLowerCase().includes(search));
+    }
+
+    if (activeCategoryFilters.size > 0) {
+      sites = sites.filter((site) => {
+        const cat = getCategoryForHost(site.host, settings.siteCategories);
+        return activeCategoryFilters.has(cat);
+      });
+    }
+
+    switch (categorySortBy) {
+      case 'activity':
+        sites.sort((a, b) => b.totals.activeMs - a.totals.activeMs);
+        break;
+      case 'name':
+        sites.sort((a, b) => a.host.localeCompare(b.host));
+        break;
+      case 'recent':
+        sites.sort((a, b) => b.lastSeenAt - a.lastSeenAt);
+        break;
+    }
+
+    return sites;
+  }, [
+    trackedSites,
+    categorySearch,
+    activeCategoryFilters,
+    categorySortBy,
+    settings.siteCategories,
+  ]);
+
+  const categoryTotalPages = Math.max(
+    1,
+    Math.ceil(processedCategorySites.length / CATEGORY_SITES_PER_PAGE)
+  );
+
+  const paginatedCategorySites = useMemo(() => {
+    const start = categorySitesPage * CATEGORY_SITES_PER_PAGE;
+    return processedCategorySites.slice(start, start + CATEGORY_SITES_PER_PAGE);
+  }, [processedCategorySites, categorySitesPage]);
+
+  useEffect(() => {
+    setCategorySitesPage(0);
+  }, [categorySearch, activeCategoryFilters, categorySortBy]);
+
+  const toggleCategoryFilter = (category: Category) => {
+    setActiveCategoryFilters((prev) => {
+      const next = new Set(prev);
+      if (next.has(category)) {
+        next.delete(category);
+      } else {
+        next.add(category);
+      }
+      return next;
+    });
+  };
 
   useEffect(() => {
     const init = async () => {
@@ -574,85 +662,177 @@ export function App() {
 
             {trackedSites.length > 0 ? (
               <>
-                {trackedSites.length > 5 && (
-                  <div className="relative mt-4">
-                    <Search className="text-muted-foreground pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2" />
-                    <input
-                      type="text"
-                      className="input w-full pl-9"
-                      placeholder="Search sites..."
-                      value={categorySearch}
-                      onChange={(e) => setCategorySearch(e.target.value)}
-                    />
+                <div className="mt-4 flex items-center gap-2">
+                  {trackedSites.length > 5 && (
+                    <div className="relative flex-1">
+                      <Search className="text-muted-foreground pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2" />
+                      <input
+                        type="text"
+                        className="input w-full pl-9"
+                        placeholder="Search sites..."
+                        value={categorySearch}
+                        onChange={(e) => setCategorySearch(e.target.value)}
+                      />
+                    </div>
+                  )}
+                  <Select
+                    value={categorySortBy}
+                    onValueChange={(val) =>
+                      setCategorySortBy(val as CategorySortOption)
+                    }
+                  >
+                    <SelectTrigger className="h-[2.25rem] w-[150px] shrink-0 text-xs">
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent align="end">
+                      <SelectItem value="activity" className="text-xs">
+                        Most active
+                      </SelectItem>
+                      <SelectItem value="name" className="text-xs">
+                        Name (A-Z)
+                      </SelectItem>
+                      <SelectItem value="recent" className="text-xs">
+                        Recently seen
+                      </SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+
+                {availableCategories.length > 1 && (
+                  <div className="mt-3 flex flex-wrap gap-1.5">
+                    {availableCategories.map((cat) => {
+                      const isActive = activeCategoryFilters.has(cat);
+                      return (
+                        <button
+                          key={cat}
+                          type="button"
+                          className={`inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 text-[11px] font-medium transition-all ${
+                            isActive
+                              ? CATEGORY_COLORS[cat].text
+                              : 'text-muted-foreground hover:text-foreground'
+                          }`}
+                          style={
+                            isActive
+                              ? {
+                                  backgroundColor: `${CATEGORY_SVG_COLORS[cat]}15`,
+                                }
+                              : undefined
+                          }
+                          onClick={() => toggleCategoryFilter(cat)}
+                        >
+                          <span
+                            className={`h-2 w-2 rounded-full ${CATEGORY_COLORS[cat].bg}`}
+                            style={{ opacity: isActive ? 1 : 0.5 }}
+                          />
+                          {CATEGORIES[cat].label}
+                          <span className="text-muted-foreground text-[10px]">
+                            {categoryCounts[cat]}
+                          </span>
+                        </button>
+                      );
+                    })}
                   </div>
                 )}
 
-                <div className="mt-4 space-y-2">
-                  {filteredSites.slice(0, 20).map((site) => {
-                    const category = getCategoryForHost(
-                      site.host,
-                      settings.siteCategories
-                    );
-                    return (
-                      <div
-                        key={site.key}
-                        className="border-border bg-muted/30 flex items-center justify-between gap-2 rounded-md border px-3 py-2"
-                      >
-                        <div className="flex min-w-0 items-center gap-2">
-                          <Favicon host={site.host} size={16} />
-                          <span className="min-w-0 truncate text-sm leading-snug">
-                            {site.host}
-                          </span>
-                        </div>
-                        <div className="relative shrink-0">
-                          <Select
-                            value={category}
-                            onValueChange={(val) =>
-                              void handleCategoryChange(
-                                site.host,
-                                val as Category
-                              )
-                            }
-                          >
-                            <SelectTrigger
-                              className={`h-7 w-[130px] border-none bg-transparent p-0 text-xs shadow-none hover:bg-transparent focus:ring-0 ${CATEGORY_COLORS[category].text}`}
+                {paginatedCategorySites.length > 0 ? (
+                  <div className="mt-4 space-y-2">
+                    {paginatedCategorySites.map((site) => {
+                      const category = getCategoryForHost(
+                        site.host,
+                        settings.siteCategories
+                      );
+                      return (
+                        <div
+                          key={site.key}
+                          className="border-border bg-muted/30 flex items-center justify-between gap-2 rounded-md border px-3 py-2"
+                        >
+                          <div className="flex min-w-0 items-center gap-2">
+                            <Favicon host={site.host} size={16} />
+                            <span className="min-w-0 truncate text-sm leading-snug">
+                              {site.host}
+                            </span>
+                          </div>
+                          <div className="relative shrink-0">
+                            <Select
+                              value={category}
+                              onValueChange={(val) =>
+                                void handleCategoryChange(
+                                  site.host,
+                                  val as Category
+                                )
+                              }
                             >
-                              <div className="flex items-center gap-2">
-                                <SelectValue />
-                              </div>
-                            </SelectTrigger>
-                            <SelectContent align="end">
-                              {CATEGORY_LIST.map((cat) => (
-                                <SelectItem
-                                  key={cat}
-                                  value={cat}
-                                  className="text-xs"
-                                >
-                                  <div className="flex items-center gap-2">
-                                    <span
-                                      className={`h-2 w-2 shrink-0 rounded-full ${CATEGORY_COLORS[cat].bg}`}
-                                    />
-                                    <span>{CATEGORIES[cat].label}</span>
-                                  </div>
-                                </SelectItem>
-                              ))}
-                            </SelectContent>
-                          </Select>
+                              <SelectTrigger
+                                className={`h-7 w-[130px] border-none bg-transparent p-0 text-xs shadow-none hover:bg-transparent focus:ring-0 ${CATEGORY_COLORS[category].text}`}
+                              >
+                                <div className="flex items-center gap-2">
+                                  <SelectValue />
+                                </div>
+                              </SelectTrigger>
+                              <SelectContent align="end">
+                                {CATEGORY_LIST.map((cat) => (
+                                  <SelectItem
+                                    key={cat}
+                                    value={cat}
+                                    className="text-xs"
+                                  >
+                                    <div className="flex items-center gap-2">
+                                      <span
+                                        className={`h-2 w-2 shrink-0 rounded-full ${CATEGORY_COLORS[cat].bg}`}
+                                      />
+                                      <span>{CATEGORIES[cat].label}</span>
+                                    </div>
+                                  </SelectItem>
+                                ))}
+                              </SelectContent>
+                            </Select>
+                          </div>
                         </div>
-                      </div>
-                    );
-                  })}
-                  {filteredSites.length > 20 && (
-                    <p className="text-muted-foreground text-xs">
-                      Showing 20 of {filteredSites.length} sites. Use search to
-                      find more.
-                    </p>
+                      );
+                    })}
+                  </div>
+                ) : (
+                  <p className="text-muted-foreground mt-6 text-center text-xs">
+                    No sites match your filters.
+                  </p>
+                )}
+
+                <div className="mt-4 flex items-center justify-between">
+                  <p className="text-muted-foreground text-xs">
+                    {processedCategorySites.length} site
+                    {processedCategorySites.length !== 1 ? 's' : ''}
+                    {(categorySearch || activeCategoryFilters.size > 0) &&
+                      ' found'}
+                  </p>
+
+                  {categoryTotalPages > 1 && (
+                    <div className="flex items-center gap-3">
+                      <button
+                        type="button"
+                        className="text-muted-foreground hover:text-foreground p-1 transition-colors disabled:opacity-30"
+                        disabled={categorySitesPage === 0}
+                        onClick={() => setCategorySitesPage((p) => p - 1)}
+                      >
+                        <ChevronLeft className="h-4 w-4" />
+                      </button>
+                      <span className="text-muted-foreground text-xs tabular-nums">
+                        {categorySitesPage + 1} of {categoryTotalPages}
+                      </span>
+                      <button
+                        type="button"
+                        className="text-muted-foreground hover:text-foreground p-1 transition-colors disabled:opacity-30"
+                        disabled={categorySitesPage >= categoryTotalPages - 1}
+                        onClick={() => setCategorySitesPage((p) => p + 1)}
+                      >
+                        <ChevronRight className="h-4 w-4" />
+                      </button>
+                    </div>
                   )}
                 </div>
 
                 {Object.keys(settings.siteCategories).length > 0 && (
                   <button
-                    className="text-muted-foreground mt-4 text-xs hover:underline"
+                    className="text-muted-foreground mt-2 text-xs hover:underline"
                     onClick={() => void handleResetCategories()}
                     type="button"
                   >
