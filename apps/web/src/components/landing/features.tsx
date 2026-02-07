@@ -3,12 +3,12 @@
 import { motion } from 'framer-motion';
 import {
   BarChart3,
-  FileDown,
+  CheckCircle,
+  Code2,
+  Database,
   FolderKanban,
   HardDrive,
   type LucideIcon,
-  Moon,
-  Zap,
 } from 'lucide-react';
 
 const FEATURES = [
@@ -16,37 +16,37 @@ const FEATURES = [
     icon: HardDrive,
     title: 'Local-only storage',
     description:
-      'Your browsing data never leaves your device. No servers, no cloud, no exceptions.',
+      'Your data never leaves your device. No servers, no cloud, no exceptions.',
   },
   {
     icon: BarChart3,
     title: 'Rich visualizations',
     description:
-      'Donut charts, heatmaps, and daily activity breakdowns to make sense of your habits.',
+      'Donut charts, heatmaps, daily activity breakdowns, and more to make sense of your habits.',
   },
   {
     icon: FolderKanban,
     title: 'Smart categories',
     description:
-      'Sites are auto-categorized as productive, social, entertainment, and more. Override anytime.',
+      'Sites are auto-categorized as productive, social, entertainment, and more. Change them anytime.',
   },
   {
-    icon: Zap,
-    title: 'Productivity insights',
+    icon: CheckCircle,
+    title: 'Comprehensive insights',
     description:
-      'See your productive percentage at a glance. Know instantly how much of your time is spent on work vs distractions.',
+      'See your productivity, distractions, and more in one place. Know exactly where your time goes.',
   },
   {
-    icon: Moon,
-    title: 'Light & dark mode',
+    icon: Database,
+    title: 'You own your data',
     description:
-      'A polished interface that adapts to your system preference or manual toggle.',
+      'Download your data as JSON/CSV anytime. You can also clear your data whenever you want.',
   },
   {
-    icon: FileDown,
-    title: 'Export your data',
+    icon: Code2,
+    title: 'Fully open source',
     description:
-      'Download everything as JSON or CSV anytime. Your data, your format, your choice.',
+      'Trust via transparency. You can inspect the code on Github anytime you want.',
   },
 ] as const;
 

@@ -14,19 +14,19 @@ const PROMISES = [
     icon: HardDrive,
     title: 'Stored on your device',
     description:
-      'All data lives in chrome.storage.local. No servers, no cloud, no third parties. Ever.',
+      'All data lives in chrome storage. No servers, no cloud, no third parties. Ever.',
   },
   {
     icon: WifiOff,
     title: 'Zero network requests',
     description:
-      'Anicite makes exactly zero requests to any external server. No analytics, no telemetry, no pings.',
+      'Anicite makes exactly zero requests to any external server. No analytics, no telemetry, no polling.',
   },
   {
     icon: EyeOff,
-    title: 'You own everything',
+    title: 'You own your data',
     description:
-      'Export all your data as JSON or CSV at any time. Pause tracking, exclude sites, or wipe everything in one click.',
+      'Export all your data at any time. Pause tracking, exclude sites, or wipe everything in one click.',
   },
 ] as const;
 
@@ -66,11 +66,10 @@ export function Privacy() {
       <div className="mx-auto max-w-6xl">
         <div className="mb-14 text-center">
           <h2 className="text-foreground mb-4 text-3xl font-bold tracking-tight sm:text-4xl">
-            Privacy isn&apos;t a feature — it&apos;s the architecture
+            Privacy isn&apos;t a feature - it&apos;s the foundation
           </h2>
           <p className="text-muted-foreground mx-auto max-w-2xl text-lg">
-            We built Anicite so that privacy violations are structurally
-            impossible, not just promised.
+            We've built Anicite keeping privacy in mind.
           </p>
         </div>
 
@@ -89,7 +88,7 @@ export function Privacy() {
         >
           <Code className="text-muted-foreground h-4 w-4" />
           <p className="text-muted-foreground text-sm">
-            Don&apos;t take our word for it —{' '}
+            Don&apos;t take our word for it -{' '}
             <a
               href="https://github.com/CarboxyDev/anicite"
               target="_blank"

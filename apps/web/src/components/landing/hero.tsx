@@ -1,3 +1,4 @@
+/* eslint-disable @next/next/no-img-element */
 'use client';
 
 import { Button } from '@repo/packages-ui/button';
@@ -17,7 +18,7 @@ export function Hero() {
           className="space-y-6"
         >
           <div className="border-border text-muted-foreground mx-auto inline-flex items-center gap-2 rounded-full border px-3.5 py-1.5 text-sm">
-            Local-only browsing analytics
+            Browsing analytics
             <span className="bg-border h-3.5 w-px" />
             Free forever
           </div>
@@ -31,13 +32,15 @@ export function Hero() {
           <p className="text-muted-foreground mx-auto max-w-2xl text-lg leading-relaxed">
             A Chrome extension that helps you understand your browsing habits
             without compromising your privacy. All data stays on your device.
-            Always.
           </p>
 
           <div className="flex items-center justify-center pt-2">
             <Button asChild size="lg">
-              <a href={siteConfig.chromeWebStore} className="gap-2">
-                Add to Chrome — it&apos;s free
+              <a
+                href={siteConfig.chromeWebStore}
+                className="gap-2 font-semibold"
+              >
+                Add to Chrome - it&apos;s free
                 <ArrowRight className="h-4 w-4" />
               </a>
             </Button>

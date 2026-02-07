@@ -26,6 +26,7 @@ export function Navbar() {
     >
       <div className="mx-auto flex h-16 max-w-6xl items-center justify-between px-6">
         <a href="/" className="flex items-center gap-2.5">
+          {/* eslint-disable-next-line @next/next/no-img-element */}
           <img src="/icon.svg" alt={siteConfig.name} className="h-8 w-8" />
           <span className="text-foreground text-lg font-semibold tracking-tight">
             {siteConfig.name}

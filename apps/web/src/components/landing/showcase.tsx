@@ -15,20 +15,20 @@ const SCREENS: ScreenConfig[] = [
   {
     title: 'Quick glance popup',
     description:
-      "See today's stats, current site info, and category at a glance — without leaving your tab.",
+      "See today's stats, current site info, and more at a glance without leaving your tab.",
     imageSrc: '/showcase-popup',
     narrow: true,
   },
   {
     title: 'Insights dashboard',
     description:
-      'Dive deep with interactive charts — time by category, daily activity, hourly patterns, and your top sites.',
+      'Dive deep with interactive charts like time breakdown by category, heatmaps, daily activity, hourly patterns, and your top sites.',
     imageSrc: '/showcase-insights',
   },
   {
-    title: 'Your rules, your way',
+    title: 'Customize your experience',
     description:
-      'Exclude sites, manage categories, choose tracking modes, and export data whenever you want.',
+      'Exclude sites, manage categories, choose tracking modes, and export data whenever you want. Your browser, your rules.',
     imageSrc: '/showcase-settings',
   },
 ];
