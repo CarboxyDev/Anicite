@@ -1,9 +1,12 @@
 import {
+  AlertTriangle,
+  ChevronDown,
   ChevronLeft,
   ChevronRight,
   Database,
   Download,
   EyeOff,
+  FolderArchive,
   Globe,
   HardDrive,
   Lock,
@@ -11,6 +14,7 @@ import {
   Search,
   Server,
   Shield,
+  Tags,
   Trash2,
   X,
 } from 'lucide-react';
@@ -166,6 +170,7 @@ export function App() {
   const [isExporting, setIsExporting] = useState(false);
   const [exportDateRange, setExportDateRange] =
     useState<ExportDateRange>('all');
+  const [exportFormat, setExportFormat] = useState<ExportFormat>('json');
   const [exportSuccess, setExportSuccess] = useState<ExportFormat | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [storageUsage, setStorageUsage] = useState<StorageUsage | null>(null);
@@ -173,6 +178,7 @@ export function App() {
   const [pruneDays, setPruneDays] = useState('30');
   const [isPruning, setIsPruning] = useState(false);
   const [pruneSuccess, setPruneSuccess] = useState<string | null>(null);
+  const [isPrivacyExpanded, setIsPrivacyExpanded] = useState(false);
 
   const [categorySortBy, setCategorySortBy] =
     useState<CategorySortOption>('activity');
@@ -529,13 +535,18 @@ export function App() {
             >
               <div className="flex items-center gap-3">
                 <div
-                  className={`flex h-10 w-10 items-center justify-center rounded-xl transition-colors ${
-                    settings.enabled ? 'bg-primary/15' : 'bg-amber-500/15'
-                  }`}
+                  className="flex h-10 w-10 items-center justify-center rounded-xl transition-colors"
+                  style={{
+                    backgroundColor: settings.enabled
+                      ? 'oklch(from var(--success) l c h / 0.15)'
+                      : 'rgb(245 158 11 / 0.15)',
+                  }}
                 >
                   <svg
                     className={`h-5 w-5 transition-colors ${
-                      settings.enabled ? 'text-primary' : 'text-amber-500'
+                      settings.enabled
+                        ? 'text-emerald-600 dark:text-emerald-400'
+                        : 'text-amber-500'
                     }`}
                     fill="none"
                     viewBox="0 0 24 24"
@@ -769,7 +780,7 @@ export function App() {
                         </div>
                       </div>
                       <button
-                        className="text-muted-foreground hover:text-destructive hover:bg-destructive/10 flex h-7 w-7 shrink-0 items-center justify-center rounded-md transition-all"
+                        className="text-muted-foreground hover:text-destructive hover:bg-destructive flex h-7 w-7 shrink-0 items-center justify-center rounded-md transition-all hover:opacity-[0.1]"
                         onClick={() => void handleRemoveExclusion(host)}
                         type="button"
                         title="Remove from exclusion list"
@@ -795,17 +806,22 @@ export function App() {
             </div>
           </section>
 
-          <section className="card">
-            <div>
-              <h2 className="font-semibold">Site Categories</h2>
-              <p className="text-muted-foreground mt-1 text-xs">
-                Categorize your sites to see time breakdowns in Insights.
-              </p>
+          <section className="card overflow-hidden p-0">
+            <div className="flex items-center gap-3 p-4">
+              <div className="bg-muted flex h-10 w-10 items-center justify-center rounded-xl">
+                <Tags className="text-muted-foreground h-5 w-5" />
+              </div>
+              <div>
+                <h2 className="font-semibold">Site Categories</h2>
+                <p className="text-muted-foreground mt-0.5 text-xs">
+                  Categorize your sites to see time breakdowns in Insights
+                </p>
+              </div>
             </div>
 
             {trackedSites.length > 0 ? (
-              <>
-                <div className="mt-4 flex items-center gap-2">
+              <div className="border-border border-t p-4">
+                <div className="flex items-center gap-2">
                   {trackedSites.length > 5 && (
                     <div className="relative flex-1">
                       <Search className="text-muted-foreground pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2" />
@@ -982,160 +998,229 @@ export function App() {
                     Reset all to defaults
                   </button>
                 )}
-              </>
+              </div>
             ) : (
-              <p className="text-muted-foreground mt-4 text-xs">
+              <p className="text-muted-foreground p-4 pt-0 text-xs">
                 No tracked sites yet. Browse the web to start tracking.
               </p>
             )}
           </section>
 
-          {/* Storage & Export Section */}
-          <section className="card">
-            <div>
-              <h2 className="font-semibold">Data Management</h2>
-              <p className="text-muted-foreground mt-1 text-xs">
-                Manage your locally stored browsing data.
-              </p>
-            </div>
-
-            {/* Storage Usage Sub-section */}
-            {storageUsage && (
-              <div className="border-border bg-muted/30 mt-5 rounded-lg border p-4">
-                <div className="flex items-center gap-2">
-                  <Database className="text-primary h-4 w-4" />
-                  <span className="text-sm font-medium">Storage Usage</span>
-                </div>
-                <div className="mt-3 flex items-baseline justify-between">
-                  <span className="text-2xl font-semibold tabular-nums">
-                    {formatBytes(storageUsage.bytesInUse)}
-                  </span>
-                  <span className="rounded-full bg-emerald-500/15 px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wider text-emerald-600 dark:text-emerald-400">
-                    Unlimited
-                  </span>
-                </div>
-                <p className="text-muted-foreground mt-2 text-xs">
-                  All data is stored locally in your browser with no size
-                  restrictions.
+          {/* Data Management Section */}
+          <section className="card overflow-hidden p-0">
+            <div className="flex items-center gap-3 p-4">
+              <div className="bg-muted flex h-10 w-10 items-center justify-center rounded-xl">
+                <FolderArchive className="text-muted-foreground h-5 w-5" />
+              </div>
+              <div>
+                <h2 className="font-semibold">Data Management</h2>
+                <p className="text-muted-foreground mt-0.5 text-xs">
+                  Manage your locally stored browsing data
                 </p>
               </div>
-            )}
-
-            {/* Export Data Sub-section */}
-            <div className="mt-6">
-              <div className="flex items-center gap-2">
-                <Download className="text-primary h-4 w-4" />
-                <span className="text-sm font-medium">Export Data</span>
-              </div>
-              <p className="text-muted-foreground mt-1 text-xs">
-                Download your browsing data as a file. Choose a date range and
-                format.
-              </p>
-
-              <div className="mt-4 flex flex-wrap items-center gap-3">
-                <Select
-                  value={exportDateRange}
-                  onValueChange={(val) =>
-                    setExportDateRange(val as ExportDateRange)
-                  }
-                >
-                  <SelectTrigger className="w-[180px]">
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {(
-                      Object.entries(DATE_RANGE_LABELS) as [
-                        ExportDateRange,
-                        string,
-                      ][]
-                    ).map(([value, label]) => (
-                      <SelectItem key={value} value={value}>
-                        {label}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-
-                <div className="flex gap-2">
-                  <button
-                    className="btn btn-outline flex items-center gap-2"
-                    onClick={() => void handleExportData('json')}
-                    disabled={isExporting}
-                    type="button"
-                  >
-                    {isExporting ? 'Exporting...' : 'JSON'}
-                  </button>
-                  <button
-                    className="btn btn-outline flex items-center gap-2"
-                    onClick={() => void handleExportData('csv')}
-                    disabled={isExporting}
-                    type="button"
-                  >
-                    {isExporting ? 'Exporting...' : 'CSV'}
-                  </button>
-                </div>
-              </div>
-
-              {exportSuccess && (
-                <p className="text-success mt-3 text-xs">
-                  Data exported as {exportSuccess.toUpperCase()} successfully.
-                </p>
-              )}
             </div>
 
-            {/* Prune Data Sub-section */}
-            <div className="border-border mt-6 border-t pt-5">
-              <div className="flex items-center gap-2">
-                <Trash2 className="text-primary h-4 w-4" />
-                <span className="text-sm font-medium">Prune History</span>
-              </div>
-              <p className="text-muted-foreground mt-1 text-xs">
-                Delete old data to free up space while keeping recent history.
-              </p>
-
-              <div className="mt-4 flex flex-wrap items-center gap-3">
-                <Select value={pruneDays} onValueChange={setPruneDays}>
-                  <SelectTrigger className="w-[200px]">
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="7">Older than 7 days</SelectItem>
-                    <SelectItem value="30">Older than 30 days</SelectItem>
-                    <SelectItem value="90">Older than 3 months</SelectItem>
-                    <SelectItem value="180">Older than 6 months</SelectItem>
-                    <SelectItem value="365">Older than 1 year</SelectItem>
-                  </SelectContent>
-                </Select>
-
-                <button
-                  className="btn btn-outline hover:bg-destructive/10 hover:text-destructive hover:border-destructive/30"
-                  onClick={() => void handlePruneData()}
-                  disabled={isPruning}
-                  type="button"
-                >
-                  {isPruning ? 'Cleaning...' : 'Clean Up'}
-                </button>
-              </div>
-
-              {pruneSuccess && (
-                <p className="text-success mt-3 text-xs">{pruneSuccess}</p>
+            <div className="border-border border-t p-4">
+              {/* Storage Usage Sub-section */}
+              {storageUsage && (
+                <div className="border-border bg-muted/30 rounded-lg border p-4">
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center gap-2.5">
+                      <div className="bg-background flex h-8 w-8 items-center justify-center rounded-lg shadow-sm">
+                        <Database className="text-muted-foreground h-4 w-4" />
+                      </div>
+                      <div>
+                        <span className="text-sm font-medium">Storage</span>
+                        <p className="text-muted-foreground text-[10px]">
+                          Local browser storage
+                        </p>
+                      </div>
+                    </div>
+                    <div className="text-right">
+                      <span className="text-lg font-semibold tabular-nums">
+                        {formatBytes(storageUsage.bytesInUse)}
+                      </span>
+                      <p className="text-muted-foreground text-[10px]">
+                        Unlimited capacity
+                      </p>
+                    </div>
+                  </div>
+                </div>
               )}
+
+              {/* Export & Prune Row */}
+              <div className="mt-4 grid gap-4 sm:grid-cols-2">
+                {/* Export Card */}
+                <div className="border-border bg-muted/30 rounded-lg border p-4">
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center gap-2.5">
+                      <div className="bg-background flex h-8 w-8 items-center justify-center rounded-lg shadow-sm">
+                        <Download className="text-muted-foreground h-4 w-4" />
+                      </div>
+                      <div>
+                        <span className="text-sm font-medium">Export</span>
+                        <p className="text-muted-foreground text-[10px]">
+                          Download your data
+                        </p>
+                      </div>
+                    </div>
+                    <div className="bg-muted flex gap-0.5 rounded-md p-0.5">
+                      <button
+                        type="button"
+                        className={`rounded px-2 py-1 text-[10px] font-medium transition-all ${
+                          exportFormat === 'json'
+                            ? 'bg-background text-foreground shadow-sm'
+                            : 'text-muted-foreground hover:text-foreground'
+                        }`}
+                        onClick={() => setExportFormat('json')}
+                      >
+                        JSON
+                      </button>
+                      <button
+                        type="button"
+                        className={`rounded px-2 py-1 text-[10px] font-medium transition-all ${
+                          exportFormat === 'csv'
+                            ? 'bg-background text-foreground shadow-sm'
+                            : 'text-muted-foreground hover:text-foreground'
+                        }`}
+                        onClick={() => setExportFormat('csv')}
+                      >
+                        CSV
+                      </button>
+                    </div>
+                  </div>
+                  <div className="mt-4 space-y-3">
+                    <Select
+                      value={exportDateRange}
+                      onValueChange={(val) =>
+                        setExportDateRange(val as ExportDateRange)
+                      }
+                    >
+                      <SelectTrigger className="h-9 w-full text-xs">
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {(
+                          Object.entries(DATE_RANGE_LABELS) as [
+                            ExportDateRange,
+                            string,
+                          ][]
+                        ).map(([value, label]) => (
+                          <SelectItem
+                            key={value}
+                            value={value}
+                            className="text-xs"
+                          >
+                            {label}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                    <button
+                      className="btn btn-primary h-9 w-full text-xs"
+                      onClick={() => void handleExportData(exportFormat)}
+                      disabled={isExporting}
+                      type="button"
+                    >
+                      {isExporting ? 'Exporting...' : 'Export'}
+                    </button>
+                    {exportSuccess && (
+                      <p className="text-success text-[11px]">
+                        Exported as {exportSuccess.toUpperCase()}
+                      </p>
+                    )}
+                  </div>
+                </div>
+
+                {/* Prune Card */}
+                <div className="border-border bg-muted/30 rounded-lg border p-4">
+                  <div className="flex items-center gap-2.5">
+                    <div className="bg-background flex h-8 w-8 items-center justify-center rounded-lg shadow-sm">
+                      <Trash2 className="text-muted-foreground h-4 w-4" />
+                    </div>
+                    <div>
+                      <span className="text-sm font-medium">Prune History</span>
+                      <p className="text-muted-foreground text-[10px]">
+                        Clean up old data
+                      </p>
+                    </div>
+                  </div>
+                  <div className="mt-4 space-y-3">
+                    <Select value={pruneDays} onValueChange={setPruneDays}>
+                      <SelectTrigger className="h-9 w-full text-xs">
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="7" className="text-xs">
+                          Older than 7 days
+                        </SelectItem>
+                        <SelectItem value="30" className="text-xs">
+                          Older than 30 days
+                        </SelectItem>
+                        <SelectItem value="90" className="text-xs">
+                          Older than 3 months
+                        </SelectItem>
+                        <SelectItem value="180" className="text-xs">
+                          Older than 6 months
+                        </SelectItem>
+                        <SelectItem value="365" className="text-xs">
+                          Older than 1 year
+                        </SelectItem>
+                      </SelectContent>
+                    </Select>
+                    <button
+                      className="btn btn-outline hover:text-destructive h-9 w-full text-xs"
+                      style={
+                        {
+                          '--hover-bg': 'var(--destructive)',
+                          '--hover-border': 'var(--destructive)',
+                        } as React.CSSProperties
+                      }
+                      onClick={() => void handlePruneData()}
+                      disabled={isPruning}
+                      type="button"
+                    >
+                      {isPruning ? 'Cleaning...' : 'Clean Up'}
+                    </button>
+                    {pruneSuccess && (
+                      <p className="text-success text-[11px]">{pruneSuccess}</p>
+                    )}
+                  </div>
+                </div>
+              </div>
             </div>
           </section>
 
           {/* Danger Zone Section */}
-          <section className="card border-destructive/30 bg-destructive/5">
-            <div>
-              <h2 className="text-destructive font-semibold">Danger Zone</h2>
-              <p className="text-muted-foreground mt-1 text-xs">
-                Irreversible actions. Proceed with caution.
-              </p>
+          <section className="card overflow-hidden p-0">
+            <div className="flex items-center gap-3 p-4">
+              <div
+                className="flex h-10 w-10 items-center justify-center rounded-xl"
+                style={{
+                  backgroundColor:
+                    'oklch(from var(--destructive) l c h / 0.15)',
+                }}
+              >
+                <AlertTriangle className="text-destructive h-5 w-5" />
+              </div>
+              <div>
+                <h2 className="font-semibold">Danger Zone</h2>
+                <p className="text-muted-foreground mt-0.5 text-xs">
+                  Irreversible actions. Proceed with caution.
+                </p>
+              </div>
             </div>
 
-            <div className="mt-4">
+            <div className="border-border border-t p-4">
               {showClearConfirm ? (
                 <div className="space-y-3">
-                  <div className="bg-destructive/10 rounded-md px-3 py-2">
+                  <div
+                    className="rounded-lg px-3 py-3"
+                    style={{
+                      backgroundColor:
+                        'oklch(from var(--destructive) l c h / 0.1)',
+                    }}
+                  >
                     <p className="text-destructive text-sm font-medium">
                       Are you sure? This will permanently delete all stored
                       browsing data.
@@ -1160,15 +1245,31 @@ export function App() {
                   </div>
                 </div>
               ) : (
-                <div className="flex items-center justify-between">
-                  <div>
-                    <p className="text-sm font-medium">Clear all data</p>
-                    <p className="text-muted-foreground text-xs">
-                      Delete all browsing history and statistics.
-                    </p>
+                <div
+                  className="bg-background/50 flex items-center justify-between gap-4 rounded-lg border px-4 py-3"
+                  style={{
+                    borderColor: 'oklch(from var(--destructive) l c h / 0.2)',
+                  }}
+                >
+                  <div className="flex items-center gap-3">
+                    <div
+                      className="flex h-9 w-9 items-center justify-center rounded-lg"
+                      style={{
+                        backgroundColor:
+                          'oklch(from var(--destructive) l c h / 0.15)',
+                      }}
+                    >
+                      <Trash2 className="text-destructive h-4 w-4" />
+                    </div>
+                    <div>
+                      <p className="text-sm font-medium">Clear all data</p>
+                      <p className="text-muted-foreground text-xs">
+                        Delete all browsing history and statistics
+                      </p>
+                    </div>
                   </div>
                   <button
-                    className="btn btn-destructive"
+                    className="btn btn-destructive shrink-0"
                     onClick={() => setShowClearConfirm(true)}
                     type="button"
                   >
@@ -1185,101 +1286,122 @@ export function App() {
             </div>
           </section>
 
-          {/* Privacy Section */}
-          <section className="card">
-            <div className="flex items-center gap-2">
-              <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-emerald-500/15">
-                <Shield className="h-4 w-4 text-emerald-600 dark:text-emerald-400" />
-              </div>
-              <div>
-                <h2 className="font-semibold">Privacy First</h2>
-                <p className="text-muted-foreground text-xs">
-                  How Anicite protects your data.
-                </p>
-              </div>
-            </div>
-
-            <div className="mt-5 grid gap-3 sm:grid-cols-2">
-              {/* Local Storage */}
-              <div className="border-border bg-muted/30 rounded-lg border p-3">
-                <div className="flex items-center gap-2">
-                  <HardDrive className="text-primary h-4 w-4" />
-                  <span className="text-sm font-medium">100% Local</span>
+          {/* Privacy Section - Collapsible */}
+          <section className="card overflow-hidden p-0">
+            <button
+              type="button"
+              className="hover:bg-muted/30 flex w-full items-center justify-between gap-3 p-4 text-left transition-colors"
+              onClick={() => setIsPrivacyExpanded(!isPrivacyExpanded)}
+            >
+              <div className="flex items-center gap-3">
+                <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-emerald-500/15">
+                  <Shield className="h-5 w-5 text-emerald-600 dark:text-emerald-400" />
                 </div>
-                <p className="text-muted-foreground mt-1.5 text-xs">
-                  All data stays in your browser. Nothing leaves your device.
-                </p>
-              </div>
-
-              {/* No Server */}
-              <div className="border-border bg-muted/30 rounded-lg border p-3">
-                <div className="flex items-center gap-2">
-                  <Server className="text-primary h-4 w-4" />
-                  <span className="text-sm font-medium">No Servers</span>
+                <div>
+                  <h2 className="font-semibold">Privacy First</h2>
+                  <p className="text-muted-foreground mt-0.5 text-xs">
+                    How Anicite protects your data
+                  </p>
                 </div>
-                <p className="text-muted-foreground mt-1.5 text-xs">
-                  Zero network requests. No accounts, no sync, no tracking.
-                </p>
               </div>
+              <ChevronDown
+                className={`text-muted-foreground h-5 w-5 shrink-0 transition-transform duration-200 ${
+                  isPrivacyExpanded ? 'rotate-180' : ''
+                }`}
+              />
+            </button>
 
-              {/* URL Sanitization */}
-              <div className="border-border bg-muted/30 rounded-lg border p-3">
-                <div className="flex items-center gap-2">
-                  <Globe className="text-primary h-4 w-4" />
-                  <span className="text-sm font-medium">URL Sanitization</span>
+            {isPrivacyExpanded && (
+              <div className="border-border border-t p-4">
+                <div className="grid gap-3 sm:grid-cols-2">
+                  {/* Local Storage */}
+                  <div className="border-border bg-muted/30 rounded-lg border p-3">
+                    <div className="flex items-center gap-2">
+                      <HardDrive className="text-muted-foreground h-4 w-4" />
+                      <span className="text-sm font-medium">100% Local</span>
+                    </div>
+                    <p className="text-muted-foreground mt-1.5 text-xs">
+                      All data stays in your browser. Nothing leaves your
+                      device.
+                    </p>
+                  </div>
+
+                  {/* No Server */}
+                  <div className="border-border bg-muted/30 rounded-lg border p-3">
+                    <div className="flex items-center gap-2">
+                      <Server className="text-muted-foreground h-4 w-4" />
+                      <span className="text-sm font-medium">No Servers</span>
+                    </div>
+                    <p className="text-muted-foreground mt-1.5 text-xs">
+                      Zero network requests. No accounts, no sync, no tracking.
+                    </p>
+                  </div>
+
+                  {/* URL Sanitization */}
+                  <div className="border-border bg-muted/30 rounded-lg border p-3">
+                    <div className="flex items-center gap-2">
+                      <Globe className="text-muted-foreground h-4 w-4" />
+                      <span className="text-sm font-medium">
+                        URL Sanitization
+                      </span>
+                    </div>
+                    <p className="text-muted-foreground mt-1.5 text-xs">
+                      Only the domain address is stored. Query strings and
+                      hashes are stripped.
+                    </p>
+                  </div>
+
+                  {/* Incognito */}
+                  <div className="border-border bg-muted/30 rounded-lg border p-3">
+                    <div className="flex items-center gap-2">
+                      <EyeOff className="text-muted-foreground h-4 w-4" />
+                      <span className="text-sm font-medium">
+                        Incognito Blocked
+                      </span>
+                    </div>
+                    <p className="text-muted-foreground mt-1.5 text-xs">
+                      Extension is disabled in incognito mode by design.
+                    </p>
+                  </div>
+
+                  {/* Data Control */}
+                  <div className="border-border bg-muted/30 rounded-lg border p-3">
+                    <div className="flex items-center gap-2">
+                      <Lock className="text-muted-foreground h-4 w-4" />
+                      <span className="text-sm font-medium">Full Control</span>
+                    </div>
+                    <p className="text-muted-foreground mt-1.5 text-xs">
+                      Export or delete your data anytime. You own everything.
+                    </p>
+                  </div>
+
+                  {/* What's Tracked */}
+                  <div className="border-border bg-muted/30 rounded-lg border p-3">
+                    <div className="flex items-center gap-2">
+                      <Database className="text-muted-foreground h-4 w-4" />
+                      <span className="text-sm font-medium">Minimal Data</span>
+                    </div>
+                    <p className="text-muted-foreground mt-1.5 text-xs">
+                      Visits, time, clicks, scrolls, tab switches. Nothing
+                      personal.
+                    </p>
+                  </div>
                 </div>
-                <p className="text-muted-foreground mt-1.5 text-xs">
-                  Only the domain address is stored. Query strings and hashes
-                  are stripped.
+
+                <p className="text-muted-foreground mt-4 text-center text-xs">
+                  Anicite is open source.{' '}
+                  <a
+                    href="https://github.com/CarboxyDev/anicite"
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="text-primary hover:underline"
+                  >
+                    Verify our privacy claims in the code
+                  </a>
+                  .
                 </p>
               </div>
-
-              {/* Incognito */}
-              <div className="border-border bg-muted/30 rounded-lg border p-3">
-                <div className="flex items-center gap-2">
-                  <EyeOff className="text-primary h-4 w-4" />
-                  <span className="text-sm font-medium">Incognito Blocked</span>
-                </div>
-                <p className="text-muted-foreground mt-1.5 text-xs">
-                  Extension is disabled in incognito mode by design.
-                </p>
-              </div>
-
-              {/* Data Control */}
-              <div className="border-border bg-muted/30 rounded-lg border p-3">
-                <div className="flex items-center gap-2">
-                  <Lock className="text-primary h-4 w-4" />
-                  <span className="text-sm font-medium">Full Control</span>
-                </div>
-                <p className="text-muted-foreground mt-1.5 text-xs">
-                  Export or delete your data anytime. You own everything.
-                </p>
-              </div>
-
-              {/* What's Tracked */}
-              <div className="border-border bg-muted/30 rounded-lg border p-3">
-                <div className="flex items-center gap-2">
-                  <Database className="text-primary h-4 w-4" />
-                  <span className="text-sm font-medium">Minimal Data</span>
-                </div>
-                <p className="text-muted-foreground mt-1.5 text-xs">
-                  Visits, time, clicks, scrolls, tab switches. Nothing personal.
-                </p>
-              </div>
-            </div>
-
-            <p className="text-muted-foreground mt-4 text-center text-xs">
-              Anicite is open source.{' '}
-              <a
-                href="https://github.com/CarboxyDev/anicite"
-                target="_blank"
-                rel="noopener noreferrer"
-                className="text-primary hover:underline"
-              >
-                Verify our privacy claims in the code
-              </a>
-              .
-            </p>
+            )}
           </section>
         </div>
       </div>
