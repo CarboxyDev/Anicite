@@ -1,5 +1,6 @@
 import {
   AlertTriangle,
+  BarChart3,
   ChevronDown,
   ChevronLeft,
   ChevronRight,
@@ -515,13 +516,29 @@ export function App() {
     <div className="bg-background text-foreground min-h-screen px-6 py-12">
       <div className="mx-auto max-w-2xl">
         <header className="mb-10">
-          <p className="text-primary text-xs font-semibold uppercase tracking-widest">
-            Anicite
-          </p>
-          <h1 className="mt-2 text-2xl font-semibold">Settings</h1>
-          <p className="text-muted-foreground mt-1 text-sm">
-            Manage your tracking preferences and data.
-          </p>
+          <div className="flex items-start justify-between">
+            <div>
+              <p className="text-primary text-xs font-semibold uppercase tracking-widest">
+                Anicite
+              </p>
+              <h1 className="mt-2 text-2xl font-semibold">Settings</h1>
+              <p className="text-muted-foreground mt-1 text-sm">
+                Manage your tracking preferences and data.
+              </p>
+            </div>
+            <button
+              className="text-muted-foreground hover:text-foreground hover:bg-muted rounded-md p-2 transition-colors"
+              onClick={() =>
+                chrome.tabs.create({
+                  url: chrome.runtime.getURL('insights.html'),
+                })
+              }
+              title="Insights"
+              type="button"
+            >
+              <BarChart3 className="h-5 w-5" />
+            </button>
+          </div>
         </header>
 
         <div className="space-y-8">
