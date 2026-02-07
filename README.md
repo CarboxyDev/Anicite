@@ -1,23 +1,22 @@
 <div align="center">
-  <img src="assets/icon.svg" alt="Anicite Logo" width="200" />
+  <img src="assets/icon.svg" alt="Anicite Logo" width="100" />
 </div>
 
 # Anicite
 
-A Chrome extension for local-only, consent-first analytics of your browsing activity. Understand your habits without sending data anywhere.
+A Chrome extension for local-only analytics of your browsing activity. Understand your habits without compromising your privacy.
 
 ## What is this?
 
-Anicite tracks how you spend time browsing -- page visits, active time, clicks, scrolling, tab switches, and sessions -- and presents it through clean visualizations like donut charts, heatmaps, and daily activity bars. All data stays in your browser using `chrome.storage.local`. Nothing leaves your machine.
+Anicite tracks how you spend time browsing - page visits, active time, clicks, scrolling, tab switches, and more It presents your insights through clean visualizations like donut charts, heatmaps, and daily activity bars. All data stays in your browser. Nothing leaves your machine.
 
 ## Key Features
 
-- **Fully local** -- all data stored in Chrome's local storage, never transmitted
-- **Rich insights** -- time-by-category donut charts, hourly heatmaps, daily activity bars, top sites
-- **Smart categorization** -- built-in site categories (Productive, Social, Entertainment, Shopping, Reference) with user overrides
-- **Flexible tracking** -- choose between host-only or path-level granularity, focused or visible time tracking modes
-- **Privacy-first** -- no query strings or hash fragments saved, no incognito access, full data export/clear controls
-- **Onboarding wizard** -- explains exactly what gets tracked and how to control it
+- **Fully local** - all data is stored in Chrome's local storage, it never leaves your device
+- **Privacy-first** - no query strings or hash fragments saved, no incognito access, full control over exporting and clearing your data
+- **Rich insights** - time-by-category donut charts, hourly heatmaps, daily activity bars, top sites and more
+- **Smart categorization** - built-in site categories (Productive, Social, Entertainment, Shopping, Reference) with user customizable options
+- **Flexible tracking** - choose between focused or visible time tracking modes
 
 ## Installation
 
