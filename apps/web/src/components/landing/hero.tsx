@@ -2,7 +2,7 @@
 
 import { Button } from '@repo/packages-ui/button';
 import { motion } from 'framer-motion';
-import { ArrowRight, ImageIcon } from 'lucide-react';
+import { ArrowRight } from 'lucide-react';
 
 import { siteConfig } from '@/config/site';
 
@@ -59,13 +59,14 @@ export function Hero() {
                 Anicite — Insights
               </span>
             </div>
-            <div className="flex min-h-[300px] items-center justify-center p-8 sm:min-h-[400px] md:min-h-[480px]">
-              <div className="flex flex-col items-center gap-3">
-                <ImageIcon className="text-muted-foreground/40 h-12 w-12" />
-                <p className="text-muted-foreground/60 text-sm">
-                  Replace with insights dashboard screenshot
-                </p>
-              </div>
+            <div className="group relative flex h-[300px] items-start justify-center overflow-hidden sm:h-[400px] md:h-[500px] lg:h-[600px]">
+              {/* eslint-disable-next-line @next/next/no-img-element */}
+              <img
+                src="/hero-screenshot.png"
+                alt="App Screenshot"
+                className="w-[180%] max-w-none object-cover object-top transition-transform duration-[3s] ease-in-out group-hover:translate-y-[calc(-100%_+_300px)] sm:group-hover:translate-y-[calc(-100%_+_400px)] md:group-hover:translate-y-[calc(-100%_+_500px)] lg:group-hover:translate-y-[calc(-100%_+_600px)]"
+              />
+              <div className="from-background/20 pointer-events-none absolute inset-0 bg-gradient-to-t to-transparent opacity-0 transition-opacity group-hover:opacity-100" />
             </div>
           </div>
         </motion.div>

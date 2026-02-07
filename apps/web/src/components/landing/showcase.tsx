@@ -1,14 +1,13 @@
 'use client';
 
 import { motion } from 'framer-motion';
-import { ImageIcon } from 'lucide-react';
 
 import { cn } from '@/lib/utils';
 
 interface ScreenConfig {
   title: string;
   description: string;
-  placeholder: string;
+  imageSrc: string;
   narrow?: boolean;
 }
 
@@ -17,20 +16,20 @@ const SCREENS: ScreenConfig[] = [
     title: 'Quick glance popup',
     description:
       "See today's stats, current site info, and category at a glance — without leaving your tab.",
-    placeholder: 'Replace with popup screenshot',
+    imageSrc: '/showcase-popup.png',
     narrow: true,
   },
   {
     title: 'Insights dashboard',
     description:
       'Dive deep with interactive charts — time by category, daily activity, hourly patterns, and your top sites.',
-    placeholder: 'Replace with insights screenshot',
+    imageSrc: '/showcase-insights.png',
   },
   {
     title: 'Your rules, your way',
     description:
       'Exclude sites, manage categories, choose tracking modes, and export data whenever you want.',
-    placeholder: 'Replace with settings screenshot',
+    imageSrc: '/showcase-settings.png',
   },
 ];
 
@@ -49,16 +48,22 @@ function ScreenFrame({ screen }: { screen: ScreenConfig }) {
       </div>
       <div
         className={cn(
-          'flex items-center justify-center p-6',
-          screen.narrow ? 'min-h-[360px]' : 'min-h-[280px] sm:min-h-[340px]'
+          'group relative flex items-start justify-center overflow-hidden',
+          screen.narrow ? 'h-[350px]' : 'h-[300px] sm:h-[400px]'
         )}
       >
-        <div className="flex flex-col items-center gap-2.5">
-          <ImageIcon className="text-muted-foreground/30 h-10 w-10" />
-          <p className="text-muted-foreground/50 text-sm">
-            {screen.placeholder}
-          </p>
-        </div>
+        {/* eslint-disable-next-line @next/next/no-img-element */}
+        <img
+          src={screen.imageSrc}
+          alt={screen.title}
+          className={cn(
+            'object-cover object-top transition-transform duration-[4s] ease-in-out',
+            screen.narrow
+              ? 'h-full w-full'
+              : 'w-[180%] max-w-none group-hover:translate-y-[calc(-100%_+_300px)] sm:group-hover:translate-y-[calc(-100%_+_400px)]'
+          )}
+        />
+        <div className="from-background/20 pointer-events-none absolute inset-0 bg-gradient-to-t to-transparent opacity-0 transition-opacity group-hover:opacity-100" />
       </div>
     </div>
   );
