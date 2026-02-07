@@ -5,9 +5,7 @@ export function Footer() {
     <footer className="border-border border-t px-6 py-12">
       <div className="mx-auto flex max-w-6xl flex-col items-center gap-6 text-center">
         <div className="flex items-center gap-2.5">
-          <div className="bg-primary flex h-7 w-7 items-center justify-center rounded-lg">
-            <span className="text-primary-foreground text-xs font-bold">A</span>
-          </div>
+          <img src="/icon.svg" alt={siteConfig.name} className="h-7 w-7" />
           <span className="text-foreground font-semibold">
             {siteConfig.name}
           </span>

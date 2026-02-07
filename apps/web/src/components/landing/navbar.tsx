@@ -26,9 +26,7 @@ export function Navbar() {
     >
       <div className="mx-auto flex h-16 max-w-6xl items-center justify-between px-6">
         <a href="/" className="flex items-center gap-2.5">
-          <div className="bg-primary flex h-8 w-8 items-center justify-center rounded-lg">
-            <span className="text-primary-foreground text-sm font-bold">A</span>
-          </div>
+          <img src="/icon.svg" alt={siteConfig.name} className="h-8 w-8" />
           <span className="text-foreground text-lg font-semibold tracking-tight">
             {siteConfig.name}
           </span>
