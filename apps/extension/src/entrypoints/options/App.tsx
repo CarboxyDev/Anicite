@@ -517,22 +517,55 @@ export function App() {
         </header>
 
         <div className="space-y-8">
-          <section
-            className={`card transition-colors ${!settings.enabled ? 'border-amber-500/50 bg-amber-500/5' : ''}`}
-          >
-            <div className="flex items-start justify-between gap-4">
-              <div>
-                <div className="flex items-center gap-2">
-                  <h2 className="font-semibold">Tracking</h2>
-                  {!settings.enabled && (
-                    <span className="rounded-full bg-amber-500/20 px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wider text-amber-600 dark:text-amber-400">
-                      Paused
-                    </span>
-                  )}
+          <section className="card overflow-hidden p-0">
+            <div
+              className={`flex items-center justify-between gap-4 p-4 transition-colors ${
+                settings.enabled
+                  ? 'from-primary/10 via-primary/5 bg-gradient-to-r to-transparent'
+                  : 'bg-amber-500/8'
+              }`}
+            >
+              <div className="flex items-center gap-3">
+                <div
+                  className={`flex h-10 w-10 items-center justify-center rounded-xl transition-colors ${
+                    settings.enabled ? 'bg-primary/15' : 'bg-amber-500/15'
+                  }`}
+                >
+                  <svg
+                    className={`h-5 w-5 transition-colors ${
+                      settings.enabled ? 'text-primary' : 'text-amber-500'
+                    }`}
+                    fill="none"
+                    viewBox="0 0 24 24"
+                    stroke="currentColor"
+                    strokeWidth={2}
+                  >
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      d="M15.75 5.25a3 3 0 013 3m3 0a6 6 0 01-7.029 5.912c-.563-.097-1.159.026-1.563.43L10.5 17.25H8.25v2.25H6v2.25H2.25v-2.818c0-.597.237-1.17.659-1.591l6.499-6.499c.404-.404.527-1 .43-1.563A6 6 0 1121.75 8.25z"
+                    />
+                  </svg>
                 </div>
-                <p className="text-muted-foreground mt-1 text-xs">
-                  Control whether Anicite collects browsing data.
-                </p>
+                <div>
+                  <div className="flex items-center gap-2">
+                    <h2 className="font-semibold">Tracking</h2>
+                    <span
+                      className={`rounded-full px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wider transition-colors ${
+                        settings.enabled
+                          ? 'bg-emerald-500/15 text-emerald-600 dark:text-emerald-400'
+                          : 'bg-amber-500/20 text-amber-600 dark:text-amber-400'
+                      }`}
+                    >
+                      {settings.enabled ? 'Active' : 'Paused'}
+                    </span>
+                  </div>
+                  <p className="text-muted-foreground mt-0.5 text-xs">
+                    {settings.enabled
+                      ? 'Monitoring your browsing activity'
+                      : 'Data collection is paused'}
+                  </p>
+                </div>
               </div>
               <button
                 className="switch"
@@ -544,46 +577,95 @@ export function App() {
                 <span className="switch-thumb" />
               </button>
             </div>
-            {!settings.enabled && (
-              <div className="mt-3 flex items-center gap-2 rounded-md bg-amber-500/10 px-3 py-2">
-                <div className="h-2 w-2 shrink-0 rounded-full bg-amber-500" />
-                <p className="text-xs font-medium text-amber-600 dark:text-amber-400">
-                  Tracking is paused. No browsing data is being collected.
+
+            <div className="border-border border-t p-4">
+              <div className="flex items-center justify-between gap-4">
+                <div>
+                  <h3 className="text-sm font-medium">Time Measurement</h3>
+                  <p className="text-muted-foreground mt-0.5 text-xs">
+                    When to count time on pages
+                  </p>
+                </div>
+                <div className="bg-muted flex gap-1 rounded-lg p-1">
+                  <button
+                    className={`flex items-center gap-1.5 rounded-md px-3 py-1.5 text-xs font-medium transition-all ${
+                      settings.trackingMode === 'focused'
+                        ? 'bg-background text-foreground shadow-sm'
+                        : 'text-muted-foreground hover:text-foreground'
+                    }`}
+                    onClick={() => void handleTrackingModeChange('focused')}
+                    type="button"
+                  >
+                    <svg
+                      className="h-3.5 w-3.5"
+                      fill="none"
+                      viewBox="0 0 24 24"
+                      stroke="currentColor"
+                      strokeWidth={2}
+                    >
+                      <path
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                        d="M7.5 3.75H6A2.25 2.25 0 003.75 6v1.5M16.5 3.75H18A2.25 2.25 0 0120.25 6v1.5m0 9V18A2.25 2.25 0 0118 20.25h-1.5m-9 0H6A2.25 2.25 0 013.75 18v-1.5M15 12a3 3 0 11-6 0 3 3 0 016 0z"
+                      />
+                    </svg>
+                    Focused
+                  </button>
+                  <button
+                    className={`flex items-center gap-1.5 rounded-md px-3 py-1.5 text-xs font-medium transition-all ${
+                      settings.trackingMode === 'visible'
+                        ? 'bg-background text-foreground shadow-sm'
+                        : 'text-muted-foreground hover:text-foreground'
+                    }`}
+                    onClick={() => void handleTrackingModeChange('visible')}
+                    type="button"
+                  >
+                    <svg
+                      className="h-3.5 w-3.5"
+                      fill="none"
+                      viewBox="0 0 24 24"
+                      stroke="currentColor"
+                      strokeWidth={2}
+                    >
+                      <path
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                        d="M2.036 12.322a1.012 1.012 0 010-.639C3.423 7.51 7.36 4.5 12 4.5c4.638 0 8.573 3.007 9.963 7.178.07.207.07.431 0 .639C20.577 16.49 16.64 19.5 12 19.5c-4.638 0-8.573-3.007-9.963-7.178z"
+                      />
+                      <path
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                        d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"
+                      />
+                    </svg>
+                    Visible
+                  </button>
+                </div>
+              </div>
+
+              <div className="bg-muted/50 mt-4 min-h-[4.5rem] rounded-lg px-3 py-2.5">
+                <p className="text-muted-foreground text-xs leading-relaxed">
+                  {settings.trackingMode === 'focused' ? (
+                    <>
+                      <span className="text-foreground font-medium">
+                        Focused mode:
+                      </span>{' '}
+                      Time counts only when the browser window is active. Best
+                      for measuring focused attention.
+                    </>
+                  ) : (
+                    <>
+                      <span className="text-foreground font-medium">
+                        Visible mode:
+                      </span>{' '}
+                      Time counts whenever the tab is visible, even if another
+                      app is focused. Useful for background media or
+                      multi-monitor setups.
+                    </>
+                  )}
                 </p>
               </div>
-            )}
-          </section>
-
-          <section className="card">
-            <div>
-              <h2 className="font-semibold">Time Tracking Mode</h2>
-              <p className="text-muted-foreground mt-1 text-xs">
-                Choose when to count time spent on a page.
-              </p>
             </div>
-
-            <div className="mt-4 flex gap-2">
-              <button
-                className={`btn btn-sm flex-1 ${settings.trackingMode === 'focused' ? 'btn-primary' : 'btn-ghost'}`}
-                onClick={() => void handleTrackingModeChange('focused')}
-                type="button"
-              >
-                Tab focused
-              </button>
-              <button
-                className={`btn btn-sm flex-1 ${settings.trackingMode === 'visible' ? 'btn-primary' : 'btn-ghost'}`}
-                onClick={() => void handleTrackingModeChange('visible')}
-                type="button"
-              >
-                Tab visible
-              </button>
-            </div>
-
-            <p className="text-muted-foreground mt-3 text-xs">
-              {settings.trackingMode === 'focused'
-                ? 'Time is counted only when the browser window is active. Best for measuring focused attention.'
-                : 'Time is counted whenever the tab is visible, even if another app is focused. Useful for tracking background media or multi-monitor setups.'}
-            </p>
           </section>
 
           <section className="card">
