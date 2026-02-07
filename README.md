@@ -1,3 +1,7 @@
+<div align="center">
+  <img src="assets/icon.svg" alt="Anicite Logo" width="200" />
+</div>
+
 # Anicite
 
 A Chrome extension for local-only, consent-first analytics of your browsing activity. Understand your habits without sending data anywhere.
@@ -39,30 +43,9 @@ Then load the built extension in Chrome:
 3. Click "Load unpacked"
 4. Select the `apps/extension/.output/chrome-mv3` directory
 
-### Development
-
-```bash
-pnpm dev:extension
-```
-
-This starts the WXT dev server with hot reload. Load the extension from the dev output directory the same way as above.
-
-## Project Structure
-
-```
-anicite/
-├── apps/
-│   ├── extension/    # Chrome extension (WXT + React)
-│   └── web/          # Landing page (Next.js)
-└── packages/
-    ├── types/        # Shared TypeScript types
-    ├── utils/        # Shared utilities
-    └── ui/           # Shared UI components
-```
-
 ## Tech Stack
 
-- [WXT](https://wxt.dev) -- web extension framework (Manifest V3)
+- WXT as the web extension framework (Manifest V3)
 - React 19, Tailwind CSS, Lucide icons
 - Chrome Storage API for local persistence
 
