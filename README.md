@@ -22,7 +22,7 @@ Anicite tracks how you spend time browsing - page visits, active time, clicks, s
 
 ### From the Chrome Web Store
 
-Coming soon.
+[Install Anicite from the Chrome Web Store](https://chromewebstore.google.com/detail/anicite/hjdggofcfojlkcmlheakdphkcfchjnam)
 
 ### Build from source
 

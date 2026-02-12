@@ -4,5 +4,6 @@ export const siteConfig = {
     'Local-only analytics of your browsing activity. Understand your habits without compromising your privacy.',
   url: 'https://anicite.carboxy.dev',
   github: 'https://github.com/CarboxyDev/anicite',
-  chromeWebStore: '#',
+  chromeWebStore:
+    'https://chromewebstore.google.com/detail/anicite/hjdggofcfojlkcmlheakdphkcfchjnam',
 } as const;
