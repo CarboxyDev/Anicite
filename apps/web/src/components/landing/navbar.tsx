@@ -99,10 +99,10 @@ export function Navbar() {
               {showInstallCta ? (
                 <motion.div
                   key="install-cta-md"
-                  initial={{ opacity: 0, x: 10 }}
+                  initial={{ opacity: 0, x: 8 }}
                   animate={{ opacity: 1, x: 0 }}
-                  exit={{ opacity: 0, x: 10 }}
-                  transition={{ duration: 0.2, ease: 'easeOut' }}
+                  exit={{ opacity: 0, x: 8 }}
+                  transition={{ duration: 0.18, ease: 'easeOut' }}
                   className="inline-flex"
                 >
                   <Button asChild className="h-9 px-4 font-semibold">
@@ -135,10 +135,10 @@ export function Navbar() {
               {showInstallCta ? (
                 <motion.div
                   key="install-cta"
-                  initial={{ opacity: 0, x: 10 }}
+                  initial={{ opacity: 0, x: 8 }}
                   animate={{ opacity: 1, x: 0 }}
-                  exit={{ opacity: 0, x: 10 }}
-                  transition={{ duration: 0.2, ease: 'easeOut' }}
+                  exit={{ opacity: 0, x: 8 }}
+                  transition={{ duration: 0.18, ease: 'easeOut' }}
                   className="inline-flex"
                 >
                   <Button asChild className="h-9 px-4 font-semibold">
@@ -186,19 +186,21 @@ export function Navbar() {
                 {link.label}
               </a>
             ))}
-            <div className="mt-3">
-              <Button asChild className="w-full justify-center font-semibold">
-                <a
-                  href={siteConfig.chromeWebStore}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  onClick={() => setIsMobileMenuOpen(false)}
-                >
-                  Add to Chrome
-                  <ArrowUpRight className="h-4 w-4" />
-                </a>
-              </Button>
-            </div>
+            {showInstallCta ? (
+              <div className="mt-3">
+                <Button asChild className="w-full justify-center font-semibold">
+                  <a
+                    href={siteConfig.chromeWebStore}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    onClick={() => setIsMobileMenuOpen(false)}
+                  >
+                    Add to Chrome
+                    <ArrowUpRight className="h-4 w-4" />
+                  </a>
+                </Button>
+              </div>
+            ) : null}
           </div>
         </motion.div>
       )}

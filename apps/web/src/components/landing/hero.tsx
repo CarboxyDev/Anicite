@@ -3,7 +3,7 @@
 
 import { Button } from '@repo/packages-ui/button';
 import { motion } from 'framer-motion';
-import { ArrowRight } from 'lucide-react';
+import { ArrowRight, Code2, LockKeyhole, ShieldCheck } from 'lucide-react';
 
 import { siteConfig } from '@/config/site';
 
@@ -34,17 +34,38 @@ export function Hero() {
             without compromising your privacy. All data stays on your device.
           </p>
 
-          <div className="flex items-center justify-center pt-2">
-            <Button asChild size="lg">
+          <div className="text-muted-foreground flex flex-wrap items-center justify-center gap-x-5 gap-y-2 text-sm">
+            <span className="inline-flex items-center gap-1.5">
+              <ShieldCheck className="h-4 w-4" />
+              Local-only analytics
+            </span>
+            <span className="inline-flex items-center gap-1.5">
+              <LockKeyhole className="h-4 w-4" />
+              No sign-up
+            </span>
+            <span className="inline-flex items-center gap-1.5">
+              <Code2 className="h-4 w-4" />
+              Open source
+            </span>
+          </div>
+
+          <div className="flex flex-col items-center justify-center gap-2 pt-3">
+            <Button
+              asChild
+              size="lg"
+              className="group h-12 rounded-xl px-8 text-base font-semibold shadow-[0_12px_28px_-14px_hsl(var(--primary)/0.85)] transition-all duration-200 hover:-translate-y-0.5 hover:shadow-[0_18px_34px_-16px_hsl(var(--primary)/0.9)]"
+            >
               <a
                 id="hero-add-to-chrome-cta"
                 href={siteConfig.chromeWebStore}
                 target="_blank"
                 rel="noopener noreferrer"
-                className="gap-2 font-semibold"
+                className="gap-3 font-semibold"
               >
-                Add to Chrome - it&apos;s free
-                <ArrowRight className="h-4 w-4" />
+                Add to Chrome
+                <span className="bg-primary-foreground/15 inline-flex h-6 w-6 items-center justify-center rounded-full transition-transform duration-200 group-hover:translate-x-0.5">
+                  <ArrowRight className="h-3.5 w-3.5" />
+                </span>
               </a>
             </Button>
           </div>
