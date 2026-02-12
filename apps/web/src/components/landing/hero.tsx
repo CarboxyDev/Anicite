@@ -38,6 +38,8 @@ export function Hero() {
             <Button asChild size="lg">
               <a
                 href={siteConfig.chromeWebStore}
+                target="_blank"
+                rel="noopener noreferrer"
                 className="gap-2 font-semibold"
               >
                 Add to Chrome - it&apos;s free
