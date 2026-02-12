@@ -46,18 +46,18 @@ export function GitHubStarsButton({
       rel="noopener noreferrer"
       className={className}
     >
-      <span className="border-border bg-card hover:bg-accent inline-flex items-center rounded-lg border text-sm font-medium transition-colors">
+      <span className="border-border bg-card hover:bg-accent inline-flex h-9 items-center overflow-hidden whitespace-nowrap rounded-md border text-sm font-medium transition-colors">
         <span
-          className={`flex items-center gap-2 ${compact ? 'px-3 py-1.5' : 'px-4 py-2'}`}
+          className={`flex h-9 items-center gap-2 ${compact ? 'px-2.5' : 'px-3.5'}`}
         >
-          <GitHubIcon className={compact ? 'h-3.5 w-3.5' : 'h-4 w-4'} />
+          <GitHubIcon className="h-4 w-4" />
           {!compact && 'Star on GitHub'}
         </span>
         {starCount !== null ? (
           <>
-            <span className={`bg-border w-px ${compact ? 'h-5' : 'h-6'}`} />
+            <span className="bg-border h-5 w-px" />
             <span
-              className={`flex items-center gap-1 ${compact ? 'px-2.5 py-1.5' : 'px-3 py-2'}`}
+              className={`flex h-9 items-center gap-1 ${compact ? 'px-2.5' : 'px-3'}`}
             >
               <Star
                 className={`fill-yellow-400 text-yellow-400 ${compact ? 'h-3 w-3' : 'h-3.5 w-3.5'}`}
@@ -67,9 +67,9 @@ export function GitHubStarsButton({
           </>
         ) : (
           <>
-            <span className={`bg-border w-px ${compact ? 'h-5' : 'h-6'}`} />
+            <span className="bg-border h-5 w-px" />
             <span
-              className={`flex items-center gap-1 ${compact ? 'px-2.5 py-1.5' : 'px-3 py-2'}`}
+              className={`flex h-9 items-center gap-1 ${compact ? 'px-2.5' : 'px-3'}`}
             >
               <Star
                 className={`text-muted-foreground/20 fill-muted-foreground/20 ${compact ? 'h-3 w-3' : 'h-3.5 w-3.5'}`}

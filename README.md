@@ -4,6 +4,8 @@
 
 # Anicite
 
+[![Chrome Web Store](https://img.shields.io/badge/Chrome%20Web%20Store-Install%20Now-4285F4?logo=googlechrome&logoColor=white)](https://chromewebstore.google.com/detail/anicite/hjdggofcfojlkcmlheakdphkcfchjnam)
+
 A Chrome extension for local-only analytics of your browsing activity. Understand your habits without compromising your privacy.
 
 ## What is this?

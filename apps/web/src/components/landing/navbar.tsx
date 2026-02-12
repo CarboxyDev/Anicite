@@ -1,9 +1,10 @@
 'use client';
 
+import { Button } from '@repo/packages-ui/button';
 import { ThemeToggle } from '@repo/packages-ui/theme-toggle';
-import { motion } from 'framer-motion';
-import { Menu, X } from 'lucide-react';
-import { useState } from 'react';
+import { AnimatePresence, motion } from 'framer-motion';
+import { ArrowUpRight, Menu, X } from 'lucide-react';
+import { useEffect, useState } from 'react';
 
 import { GitHubStarsButton } from '@/components/landing/github-stars-button';
 import { siteConfig } from '@/config/site';
@@ -16,6 +17,47 @@ const NAV_LINKS = [
 
 export function Navbar() {
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
+  const [showInstallCta, setShowInstallCta] = useState(false);
+  const [isGithubCompact, setIsGithubCompact] = useState(false);
+
+  useEffect(() => {
+    const heroCta = document.getElementById('hero-add-to-chrome-cta');
+
+    if (!heroCta) {
+      setShowInstallCta(true);
+      return;
+    }
+
+    const observer = new IntersectionObserver(
+      ([entry]) => {
+        setShowInstallCta(!entry.isIntersecting);
+      },
+      {
+        threshold: 0.35,
+      }
+    );
+
+    observer.observe(heroCta);
+
+    return () => {
+      observer.disconnect();
+    };
+  }, []);
+
+  useEffect(() => {
+    if (showInstallCta) {
+      setIsGithubCompact(true);
+      return;
+    }
+
+    const timeout = window.setTimeout(() => {
+      setIsGithubCompact(false);
+    }, 240);
+
+    return () => {
+      window.clearTimeout(timeout);
+    };
+  }, [showInstallCta]);
 
   return (
     <motion.header
@@ -47,11 +89,73 @@ export function Navbar() {
           ))}
         </nav>
 
-        <div className="flex items-center justify-end gap-3">
+        <div className="flex items-center justify-end gap-2 sm:gap-3">
+          <motion.div
+            layout
+            className="hidden items-center md:flex lg:hidden"
+            transition={{ type: 'spring', stiffness: 360, damping: 32 }}
+          >
+            <AnimatePresence initial={false}>
+              {showInstallCta ? (
+                <motion.div
+                  key="install-cta-md"
+                  initial={{ opacity: 0, x: 8 }}
+                  animate={{ opacity: 1, x: 0 }}
+                  exit={{ opacity: 0, x: 8 }}
+                  transition={{ duration: 0.18, ease: 'easeOut' }}
+                  className="inline-flex"
+                >
+                  <Button asChild className="h-9 px-4 font-semibold">
+                    <a
+                      href={siteConfig.chromeWebStore}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                    >
+                      Add to Chrome
+                      <ArrowUpRight className="h-4 w-4" />
+                    </a>
+                  </Button>
+                </motion.div>
+              ) : null}
+            </AnimatePresence>
+          </motion.div>
+          <motion.div
+            layout
+            className="hidden items-center gap-2 lg:flex"
+            transition={{ type: 'spring', stiffness: 360, damping: 32 }}
+          >
+            <motion.div
+              layout
+              className="inline-flex"
+              transition={{ type: 'spring', stiffness: 340, damping: 32 }}
+            >
+              <GitHubStarsButton compact={isGithubCompact} />
+            </motion.div>
+            <AnimatePresence initial={false}>
+              {showInstallCta ? (
+                <motion.div
+                  key="install-cta"
+                  initial={{ opacity: 0, x: 8 }}
+                  animate={{ opacity: 1, x: 0 }}
+                  exit={{ opacity: 0, x: 8 }}
+                  transition={{ duration: 0.18, ease: 'easeOut' }}
+                  className="inline-flex"
+                >
+                  <Button asChild className="h-9 px-4 font-semibold">
+                    <a
+                      href={siteConfig.chromeWebStore}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                    >
+                      Add to Chrome
+                      <ArrowUpRight className="h-4 w-4" />
+                    </a>
+                  </Button>
+                </motion.div>
+              ) : null}
+            </AnimatePresence>
+          </motion.div>
           <ThemeToggle />
-          <div className="hidden sm:inline-flex">
-            <GitHubStarsButton />
-          </div>
           <button
             onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
             className="text-muted-foreground hover:text-foreground md:hidden"
@@ -82,9 +186,21 @@ export function Navbar() {
                 {link.label}
               </a>
             ))}
-            <div className="mt-2 sm:hidden">
-              <GitHubStarsButton />
-            </div>
+            {showInstallCta ? (
+              <div className="mt-3">
+                <Button asChild className="w-full justify-center font-semibold">
+                  <a
+                    href={siteConfig.chromeWebStore}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    onClick={() => setIsMobileMenuOpen(false)}
+                  >
+                    Add to Chrome
+                    <ArrowUpRight className="h-4 w-4" />
+                  </a>
+                </Button>
+              </div>
+            ) : null}
           </div>
         </motion.div>
       )}

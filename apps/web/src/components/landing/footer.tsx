@@ -22,6 +22,8 @@ export function Footer() {
           </a>
           <a
             href={siteConfig.chromeWebStore}
+            target="_blank"
+            rel="noopener noreferrer"
             className="text-muted-foreground hover:text-foreground text-sm transition-colors"
           >
             Chrome Web Store
