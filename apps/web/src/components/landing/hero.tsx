@@ -37,6 +37,7 @@ export function Hero() {
           <div className="flex items-center justify-center pt-2">
             <Button asChild size="lg">
               <a
+                id="hero-add-to-chrome-cta"
                 href={siteConfig.chromeWebStore}
                 target="_blank"
                 rel="noopener noreferrer"
