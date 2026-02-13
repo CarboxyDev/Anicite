@@ -16,6 +16,7 @@ import {
   Server,
   Shield,
   Tags,
+  Timer,
   Trash2,
   X,
 } from 'lucide-react';
@@ -41,6 +42,8 @@ import { Favicon } from '../../lib/FaviconComponent';
 import {
   DEFAULT_SETTINGS,
   isValidHost,
+  type MindfulCooldownRule,
+  type MindfulProceedMode,
   normalizeHost,
   type Settings,
   type TrackingMode,
@@ -62,6 +65,10 @@ type ExportDateRange = 'all' | '7d' | '30d' | '90d';
 type CategorySortOption = 'activity' | 'name' | 'recent';
 
 const CATEGORY_SITES_PER_PAGE = 10;
+const MIN_COOLDOWN_SECONDS = 1;
+const MAX_COOLDOWN_SECONDS = 300;
+const MIN_BYPASS_MINUTES = 1;
+const MAX_BYPASS_MINUTES = 1440;
 
 const DATE_RANGE_LABELS: Record<ExportDateRange, string> = {
   all: 'All time',
@@ -159,12 +166,19 @@ function formatBytes(bytes: number): string {
   return `${parseFloat((bytes / Math.pow(k, i)).toFixed(1))} ${sizes[i]}`;
 }
 
+function clampMindfulValue(value: number, min: number, max: number): number {
+  return Math.min(max, Math.max(min, Math.round(value)));
+}
+
 export function App() {
   const [settings, setSettings] = useState<Settings>(DEFAULT_SETTINGS);
   const [trackedSites, setTrackedSites] = useState<PageStats[]>([]);
   const [categorySearch, setCategorySearch] = useState('');
   const [newHost, setNewHost] = useState('');
   const [hostError, setHostError] = useState<string | null>(null);
+  const [mindfulNewHost, setMindfulNewHost] = useState('');
+  const [mindfulHostError, setMindfulHostError] = useState<string | null>(null);
+  const [isMindfulExpanded, setIsMindfulExpanded] = useState(false);
   const [showClearConfirm, setShowClearConfirm] = useState(false);
   const [isClearing, setIsClearing] = useState(false);
   const [clearSuccess, setClearSuccess] = useState(false);
@@ -255,6 +269,14 @@ export function App() {
     return processedCategorySites.slice(start, start + CATEGORY_SITES_PER_PAGE);
   }, [processedCategorySites, categorySitesPage]);
 
+  const mindfulSites = useMemo(
+    () =>
+      Object.entries(settings.mindfulCooldown.sites)
+        .map(([host, rule]) => ({ host, rule }))
+        .sort((a, b) => a.host.localeCompare(b.host)),
+    [settings.mindfulCooldown.sites]
+  );
+
   useEffect(() => {
     setCategorySitesPage(0);
   }, [categorySearch, activeCategoryFilters, categorySortBy]);
@@ -325,6 +347,158 @@ export function App() {
 
   const handleTrackingModeChange = async (mode: TrackingMode) => {
     const next = await updateSettings({ trackingMode: mode });
+    setSettings(next);
+  };
+
+  const handleToggleMindfulCooldown = async () => {
+    const next = await updateSettings({
+      mindfulCooldown: {
+        ...settings.mindfulCooldown,
+        enabled: !settings.mindfulCooldown.enabled,
+      },
+    });
+    setSettings(next);
+  };
+
+  const handleMindfulProceedModeChange = async (mode: MindfulProceedMode) => {
+    const next = await updateSettings({
+      mindfulCooldown: {
+        ...settings.mindfulCooldown,
+        proceedMode: mode,
+      },
+    });
+    setSettings(next);
+  };
+
+  const handleToggleMindfulAutoProceed = async () => {
+    const next = await updateSettings({
+      mindfulCooldown: {
+        ...settings.mindfulCooldown,
+        autoProceed: !settings.mindfulCooldown.autoProceed,
+      },
+    });
+    setSettings(next);
+  };
+
+  const handleMindfulDefaultsChange = async (
+    key: 'defaultCooldownSeconds' | 'defaultBypassMinutes',
+    rawValue: string
+  ) => {
+    const parsed = Number(rawValue);
+    if (!Number.isFinite(parsed) || parsed <= 0) {
+      return;
+    }
+
+    const value =
+      key === 'defaultCooldownSeconds'
+        ? clampMindfulValue(parsed, MIN_COOLDOWN_SECONDS, MAX_COOLDOWN_SECONDS)
+        : clampMindfulValue(parsed, MIN_BYPASS_MINUTES, MAX_BYPASS_MINUTES);
+
+    const next = await updateSettings({
+      mindfulCooldown: {
+        ...settings.mindfulCooldown,
+        [key]: value,
+      },
+    });
+    setSettings(next);
+  };
+
+  const handleAddMindfulSite = async () => {
+    setMindfulHostError(null);
+    const host = normalizeHost(mindfulNewHost);
+
+    if (!host) {
+      setMindfulNewHost('');
+      return;
+    }
+
+    if (!isValidHost(host)) {
+      setMindfulHostError('Enter a valid domain (e.g., example.com)');
+      return;
+    }
+
+    if (settings.mindfulCooldown.sites[host]) {
+      setMindfulHostError('This site already has a cooldown rule');
+      return;
+    }
+
+    const nextSites: Record<string, MindfulCooldownRule> = {
+      ...settings.mindfulCooldown.sites,
+      [host]: {
+        cooldownSeconds: settings.mindfulCooldown.defaultCooldownSeconds,
+        bypassMinutes: settings.mindfulCooldown.defaultBypassMinutes,
+      },
+    };
+
+    const next = await updateSettings({
+      mindfulCooldown: {
+        ...settings.mindfulCooldown,
+        sites: nextSites,
+      },
+    });
+    setSettings(next);
+    setMindfulNewHost('');
+  };
+
+  const handleMindfulRuleChange = async (
+    host: string,
+    key: keyof MindfulCooldownRule,
+    rawValue: string
+  ) => {
+    const parsed = Number(rawValue);
+    if (!Number.isFinite(parsed) || parsed <= 0) {
+      return;
+    }
+
+    const value =
+      key === 'cooldownSeconds'
+        ? clampMindfulValue(parsed, MIN_COOLDOWN_SECONDS, MAX_COOLDOWN_SECONDS)
+        : clampMindfulValue(parsed, MIN_BYPASS_MINUTES, MAX_BYPASS_MINUTES);
+
+    const existing = settings.mindfulCooldown.sites[host];
+    if (!existing) {
+      return;
+    }
+
+    const nextSites: Record<string, MindfulCooldownRule> = {
+      ...settings.mindfulCooldown.sites,
+      [host]: {
+        ...existing,
+        [key]: value,
+      },
+    };
+
+    const next = await updateSettings({
+      mindfulCooldown: {
+        ...settings.mindfulCooldown,
+        sites: nextSites,
+      },
+    });
+    setSettings(next);
+  };
+
+  const handleRemoveMindfulSite = async (host: string) => {
+    const nextSites: Record<string, MindfulCooldownRule> = {
+      ...settings.mindfulCooldown.sites,
+    };
+    delete nextSites[host];
+
+    const next = await updateSettings({
+      mindfulCooldown: {
+        ...settings.mindfulCooldown,
+        sites: nextSites,
+      },
+    });
+    setSettings(next);
+  };
+
+  const handleClearMindfulSites = async () => {
+    const next = await updateSettings({
+      mindfulCooldown: {
+        ...settings.mindfulCooldown,
+        sites: {},
+      },
+    });
     setSettings(next);
   };
 
@@ -696,6 +870,329 @@ export function App() {
                 </p>
               </div>
             </div>
+          </section>
+
+          <section className="card overflow-hidden p-0">
+            <div className="flex items-center justify-between gap-4 p-4">
+              <button
+                type="button"
+                className="flex min-w-0 flex-1 items-center gap-3 text-left"
+                onClick={() => setIsMindfulExpanded((prev) => !prev)}
+              >
+                <div className="bg-muted flex h-10 w-10 items-center justify-center rounded-xl">
+                  <Timer className="text-muted-foreground h-5 w-5" />
+                </div>
+                <div className="min-w-0">
+                  <div className="flex items-center gap-2">
+                    <h2 className="font-semibold">Mindful Cooldown</h2>
+                    {mindfulSites.length > 0 && (
+                      <span className="bg-muted text-muted-foreground rounded-full px-2 py-0.5 text-[10px] font-semibold">
+                        {mindfulSites.length} site
+                        {mindfulSites.length !== 1 ? 's' : ''}
+                      </span>
+                    )}
+                  </div>
+                  <p className="text-muted-foreground mt-0.5 truncate text-xs">
+                    Add delay gates before selected sites open
+                  </p>
+                </div>
+              </button>
+              <div className="flex items-center gap-2">
+                <button
+                  className="switch"
+                  data-state={
+                    settings.mindfulCooldown.enabled ? 'checked' : 'unchecked'
+                  }
+                  onClick={handleToggleMindfulCooldown}
+                  type="button"
+                  aria-label="Toggle mindful cooldown"
+                >
+                  <span className="switch-thumb" />
+                </button>
+                <button
+                  type="button"
+                  className="text-muted-foreground hover:text-foreground rounded-md p-1 transition-colors"
+                  onClick={() => setIsMindfulExpanded((prev) => !prev)}
+                  aria-label={
+                    isMindfulExpanded
+                      ? 'Collapse mindful cooldown'
+                      : 'Expand mindful cooldown'
+                  }
+                >
+                  <ChevronDown
+                    className={`h-4 w-4 transition-transform ${
+                      isMindfulExpanded ? 'rotate-180' : ''
+                    }`}
+                  />
+                </button>
+              </div>
+            </div>
+
+            {isMindfulExpanded && (
+              <div className="border-border border-t p-4">
+                <div className="bg-muted/40 border-border grid gap-3 rounded-lg border p-3 sm:grid-cols-2">
+                  <label className="flex flex-col gap-1.5">
+                    <span className="text-muted-foreground text-[11px] font-medium uppercase tracking-wide">
+                      Default Cooldown (s)
+                    </span>
+                    <input
+                      type="number"
+                      min={MIN_COOLDOWN_SECONDS}
+                      max={MAX_COOLDOWN_SECONDS}
+                      className="input h-9 text-sm"
+                      value={settings.mindfulCooldown.defaultCooldownSeconds}
+                      onChange={(e) =>
+                        void handleMindfulDefaultsChange(
+                          'defaultCooldownSeconds',
+                          e.target.value
+                        )
+                      }
+                    />
+                  </label>
+                  <label className="flex flex-col gap-1.5">
+                    <span className="text-muted-foreground text-[11px] font-medium uppercase tracking-wide">
+                      Default Bypass (min)
+                    </span>
+                    <input
+                      type="number"
+                      min={MIN_BYPASS_MINUTES}
+                      max={MAX_BYPASS_MINUTES}
+                      className="input h-9 text-sm"
+                      value={settings.mindfulCooldown.defaultBypassMinutes}
+                      onChange={(e) =>
+                        void handleMindfulDefaultsChange(
+                          'defaultBypassMinutes',
+                          e.target.value
+                        )
+                      }
+                    />
+                  </label>
+                </div>
+
+                <div className="bg-muted/30 border-border mt-3 rounded-lg border p-3">
+                  <div className="flex items-center justify-between gap-3">
+                    <div>
+                      <p className="text-sm font-medium">Continue behavior</p>
+                      <p className="text-muted-foreground mt-0.5 text-xs">
+                        Choose how users proceed after the timer.
+                      </p>
+                    </div>
+                    <button
+                      className="switch"
+                      data-state={
+                        settings.mindfulCooldown.autoProceed
+                          ? 'checked'
+                          : 'unchecked'
+                      }
+                      onClick={handleToggleMindfulAutoProceed}
+                      type="button"
+                      aria-label="Toggle auto proceed"
+                    >
+                      <span className="switch-thumb" />
+                    </button>
+                  </div>
+
+                  <div className="mt-2 flex items-center justify-between">
+                    <span className="text-muted-foreground text-xs">
+                      Auto proceed
+                    </span>
+                    <span
+                      className={`text-xs font-medium ${
+                        settings.mindfulCooldown.autoProceed
+                          ? 'text-emerald-600 dark:text-emerald-400'
+                          : 'text-muted-foreground'
+                      }`}
+                    >
+                      {settings.mindfulCooldown.autoProceed ? 'On' : 'Off'}
+                    </span>
+                  </div>
+
+                  <div className="bg-muted mt-3 inline-flex rounded-lg p-1">
+                    <button
+                      type="button"
+                      className={`rounded-md px-3 py-1.5 text-xs font-medium transition-all ${
+                        settings.mindfulCooldown.proceedMode === 'hold'
+                          ? 'bg-background text-foreground shadow-sm'
+                          : 'text-muted-foreground hover:text-foreground'
+                      }`}
+                      onClick={() =>
+                        void handleMindfulProceedModeChange('hold')
+                      }
+                      disabled={settings.mindfulCooldown.autoProceed}
+                    >
+                      Hold to continue
+                    </button>
+                    <button
+                      type="button"
+                      className={`rounded-md px-3 py-1.5 text-xs font-medium transition-all ${
+                        settings.mindfulCooldown.proceedMode === 'click'
+                          ? 'bg-background text-foreground shadow-sm'
+                          : 'text-muted-foreground hover:text-foreground'
+                      }`}
+                      onClick={() =>
+                        void handleMindfulProceedModeChange('click')
+                      }
+                      disabled={settings.mindfulCooldown.autoProceed}
+                    >
+                      Click to continue
+                    </button>
+                  </div>
+                  {settings.mindfulCooldown.autoProceed && (
+                    <p className="text-muted-foreground mt-2 text-xs">
+                      Auto proceed is enabled, so manual continue mode is
+                      ignored.
+                    </p>
+                  )}
+                </div>
+
+                <div className="mt-4 flex gap-2">
+                  <div className="relative flex-1">
+                    <Globe className="text-muted-foreground pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2" />
+                    <input
+                      type="text"
+                      className={`input w-full pl-9 ${
+                        mindfulHostError
+                          ? 'border-destructive focus:border-destructive'
+                          : ''
+                      }`}
+                      placeholder="Enter a domain for cooldown..."
+                      value={mindfulNewHost}
+                      onChange={(e) => {
+                        setMindfulNewHost(e.target.value);
+                        setMindfulHostError(null);
+                      }}
+                      onKeyDown={(e) => {
+                        if (e.key === 'Enter') {
+                          void handleAddMindfulSite();
+                        }
+                      }}
+                    />
+                  </div>
+                  <button
+                    className="btn btn-primary flex items-center gap-1.5"
+                    onClick={() => void handleAddMindfulSite()}
+                    type="button"
+                  >
+                    <Plus className="h-4 w-4" />
+                    Add
+                  </button>
+                </div>
+                {mindfulHostError && (
+                  <p className="text-destructive mt-2 flex items-center gap-1.5 text-xs">
+                    <span className="bg-destructive inline-block h-1 w-1 rounded-full" />
+                    {mindfulHostError}
+                  </p>
+                )}
+
+                {mindfulSites.length > 1 && (
+                  <button
+                    className="text-muted-foreground hover:text-destructive mt-4 flex items-center gap-1 text-xs transition-colors"
+                    onClick={async () => {
+                      if (
+                        window.confirm(
+                          'Are you sure you want to remove all mindful cooldown sites?'
+                        )
+                      ) {
+                        await handleClearMindfulSites();
+                      }
+                    }}
+                    type="button"
+                  >
+                    <Trash2 className="h-3.5 w-3.5" />
+                    Clear all
+                  </button>
+                )}
+
+                {mindfulSites.length > 0 ? (
+                  <div className="mt-4 space-y-2">
+                    {mindfulSites.map(({ host, rule }) => (
+                      <div
+                        key={host}
+                        className="border-border bg-muted/30 rounded-lg border p-3"
+                      >
+                        <div className="flex items-center justify-between gap-3">
+                          <div className="flex min-w-0 items-center gap-2.5">
+                            <div className="bg-background flex h-7 w-7 shrink-0 items-center justify-center rounded-md shadow-sm">
+                              <Favicon host={host} size={16} />
+                            </div>
+                            <span className="block min-w-0 truncate text-sm font-medium">
+                              {host}
+                            </span>
+                          </div>
+                          <button
+                            className="text-muted-foreground hover:text-destructive hover:bg-destructive flex h-7 w-7 shrink-0 items-center justify-center rounded-md transition-all hover:opacity-[0.1]"
+                            onClick={() => void handleRemoveMindfulSite(host)}
+                            type="button"
+                            title="Remove mindful cooldown"
+                          >
+                            <X className="h-4 w-4" />
+                          </button>
+                        </div>
+                        <div className="mt-3 grid gap-2 sm:grid-cols-2">
+                          <label className="flex items-center gap-2">
+                            <span className="text-muted-foreground w-[88px] text-xs">
+                              Cooldown
+                            </span>
+                            <input
+                              type="number"
+                              min={MIN_COOLDOWN_SECONDS}
+                              max={MAX_COOLDOWN_SECONDS}
+                              className="input h-8 text-xs"
+                              value={rule.cooldownSeconds}
+                              onChange={(e) =>
+                                void handleMindfulRuleChange(
+                                  host,
+                                  'cooldownSeconds',
+                                  e.target.value
+                                )
+                              }
+                            />
+                            <span className="text-muted-foreground text-xs">
+                              sec
+                            </span>
+                          </label>
+                          <label className="flex items-center gap-2">
+                            <span className="text-muted-foreground w-[88px] text-xs">
+                              Bypass
+                            </span>
+                            <input
+                              type="number"
+                              min={MIN_BYPASS_MINUTES}
+                              max={MAX_BYPASS_MINUTES}
+                              className="input h-8 text-xs"
+                              value={rule.bypassMinutes}
+                              onChange={(e) =>
+                                void handleMindfulRuleChange(
+                                  host,
+                                  'bypassMinutes',
+                                  e.target.value
+                                )
+                              }
+                            />
+                            <span className="text-muted-foreground text-xs">
+                              min
+                            </span>
+                          </label>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                ) : (
+                  <div className="mt-6 flex flex-col items-center justify-center py-4 text-center">
+                    <div className="bg-muted/50 mb-3 flex h-14 w-14 items-center justify-center rounded-2xl">
+                      <Timer className="text-muted-foreground h-7 w-7" />
+                    </div>
+                    <h3 className="text-sm font-medium">
+                      No cooldown sites yet
+                    </h3>
+                    <p className="text-muted-foreground mt-1 max-w-[280px] text-xs">
+                      Add domains to require a short mindful pause before they
+                      open.
+                    </p>
+                  </div>
+                )}
+              </div>
+            )}
           </section>
 
           <section className="card overflow-hidden p-0">

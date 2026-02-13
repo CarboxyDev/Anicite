@@ -10,6 +10,22 @@ export type OnboardingState = {
   pinExtension: boolean;
 };
 
+export type MindfulCooldownRule = {
+  cooldownSeconds: number;
+  bypassMinutes: number;
+};
+
+export type MindfulProceedMode = 'hold' | 'click';
+
+export type MindfulCooldownSettings = {
+  enabled: boolean;
+  defaultCooldownSeconds: number;
+  defaultBypassMinutes: number;
+  proceedMode: MindfulProceedMode;
+  autoProceed: boolean;
+  sites: Record<string, MindfulCooldownRule>;
+};
+
 export type Settings = {
   enabled: boolean;
   excludeHosts: string[];
@@ -17,6 +33,7 @@ export type Settings = {
   trackingMode: TrackingMode;
   onboarding: OnboardingState;
   siteCategories: Record<string, Category>;
+  mindfulCooldown: MindfulCooldownSettings;
 };
 
 export const DEFAULT_SETTINGS: Settings = {
@@ -30,6 +47,14 @@ export const DEFAULT_SETTINGS: Settings = {
     pinExtension: false,
   },
   siteCategories: {},
+  mindfulCooldown: {
+    enabled: false,
+    defaultCooldownSeconds: 10,
+    defaultBypassMinutes: 15,
+    proceedMode: 'hold',
+    autoProceed: false,
+    sites: {},
+  },
 };
 
 export function normalizeHost(input: string): string {
@@ -62,4 +87,25 @@ export function isHostExcluded(host: string, excludeHosts: string[]): boolean {
     const candidate = normalizeHost(excluded);
     return normalized === candidate || normalized.endsWith(`.${candidate}`);
   });
+}
+
+export function getMindfulCooldownRule(
+  host: string,
+  siteRules: Record<string, MindfulCooldownRule>
+): { host: string; rule: MindfulCooldownRule } | null {
+  const normalized = normalizeHost(host);
+  let best: { host: string; rule: MindfulCooldownRule } | null = null;
+
+  for (const [configuredHost, rule] of Object.entries(siteRules)) {
+    const candidate = normalizeHost(configuredHost);
+    if (!candidate) continue;
+    if (normalized !== candidate && !normalized.endsWith(`.${candidate}`)) {
+      continue;
+    }
+    if (!best || candidate.length > best.host.length) {
+      best = { host: candidate, rule };
+    }
+  }
+
+  return best;
 }

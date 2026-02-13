@@ -53,6 +53,14 @@ export async function getSettings(): Promise<Settings> {
       ...DEFAULT_SETTINGS.siteCategories,
       ...(stored?.siteCategories ?? {}),
     },
+    mindfulCooldown: {
+      ...DEFAULT_SETTINGS.mindfulCooldown,
+      ...(stored?.mindfulCooldown ?? {}),
+      sites: {
+        ...DEFAULT_SETTINGS.mindfulCooldown.sites,
+        ...(stored?.mindfulCooldown?.sites ?? {}),
+      },
+    },
   };
 }
 
@@ -75,6 +83,17 @@ export async function updateSettings(
       partial.siteCategories !== undefined
         ? partial.siteCategories
         : current.siteCategories,
+    mindfulCooldown:
+      partial.mindfulCooldown !== undefined
+        ? {
+            ...current.mindfulCooldown,
+            ...partial.mindfulCooldown,
+            sites:
+              partial.mindfulCooldown.sites !== undefined
+                ? partial.mindfulCooldown.sites
+                : current.mindfulCooldown.sites,
+          }
+        : current.mindfulCooldown,
   };
   await setSettings(next);
   return next;
